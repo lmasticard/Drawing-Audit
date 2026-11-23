@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -13,7 +13,9 @@ import {
   FileText,
   Folder,
   LogOut,
+  Moon,
   RefreshCw,
+  Sun,
   Trash2,
   Upload,
   X,
@@ -62,6 +64,21 @@ type UploadState =
 
 const LINKED_FOLDER_STORAGE_KEY = 'folio_linked_drive_folder_v2';
 const AUDIT_STANDARD_STORAGE_KEY = 'drawing_audit_standard_v1';
+const THEME_STORAGE_KEY = 'drawing_audit_theme_v1';
+
+type InterfaceTheme = 'light' | 'dark';
+
+function loadSavedTheme(): InterfaceTheme {
+  try {
+    const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (raw === 'dark' || raw === 'light') {
+      return raw;
+    }
+  } catch {
+    // Ignore storage read errors
+  }
+  return 'light';
+}
 
 function loadSavedStandard(): AuditStandard {
   try {
@@ -109,6 +126,7 @@ export default function App() {
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
+  const [theme, setTheme] = useState<InterfaceTheme>(() => loadSavedTheme());
   const [selectedStandard, setSelectedStandard] = useState<AuditStandard>(() =>
     loadSavedStandard(),
   );
@@ -162,6 +180,16 @@ export default function App() {
       urls.clear();
     };
   }, []);
+
+  // Sync Light / Dark interface theme class on <html> and persist preference
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // Ignore storage write errors
+    }
+  }, [theme]);
 
   // Persist selected audit standard preference
   useEffect(() => {
@@ -558,7 +586,7 @@ export default function App() {
   const isDriveConnected = Boolean(accessToken && googleUser);
 
   return (
-    <div className="min-h-screen flex flex-col bg-blueprint-mosaic text-slate-900">
+    <div className="min-h-screen flex flex-col bg-blueprint-mosaic text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* Hidden replacement input for when user triggers Select PDF from preview mode */}
       {isPreviewOpen && (
         <input
@@ -572,12 +600,12 @@ export default function App() {
       )}
 
       {/* Top Bar — 3-Zone Contract */}
-      <header className="h-16 shrink-0 bg-white border-b border-slate-200 px-8 flex items-center justify-between gap-8">
+      <header className="h-16 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 flex items-center justify-between gap-8 transition-colors duration-200">
         {/* Zone 1: Single text element wordmark */}
         <button
           type="button"
           onClick={() => setIsPreviewOpen(false)}
-          className="text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
+          className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
         >
           Drawing Audit
         </button>
@@ -585,15 +613,15 @@ export default function App() {
         {/* Zone 2: Clean single-line text navigation links */}
         <nav
           aria-label="Primary navigation"
-          className="flex items-center gap-7 text-sm font-medium text-slate-600"
+          className="flex items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-400"
         >
           <button
             type="button"
             onClick={() => setIsPreviewOpen(false)}
             className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
               !isPreviewOpen
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent hover:text-slate-900'
+                ? 'border-slate-900 text-slate-900 dark:border-sky-400 dark:text-white'
+                : 'border-transparent hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             Upload
@@ -603,8 +631,8 @@ export default function App() {
             onClick={handleNavPreview}
             className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
               isPreviewOpen
-                ? 'border-slate-900 text-slate-900'
-                : 'border-transparent hover:text-slate-900'
+                ? 'border-slate-900 text-slate-900 dark:border-sky-400 dark:text-white'
+                : 'border-transparent hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             Review
@@ -612,7 +640,7 @@ export default function App() {
           <button
             type="button"
             onClick={handleNavDriveFolder}
-            className="py-1 border-b-2 border-transparent hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="py-1 border-b-2 border-transparent hover:text-slate-900 dark:hover:text-slate-100 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             Drive Folder
           </button>
@@ -623,7 +651,7 @@ export default function App() {
           <button
             type="button"
             onClick={triggerFilePicker}
-            className="px-4 py-2 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
           >
             Select PDF
           </button>
@@ -653,30 +681,74 @@ export default function App() {
         />
       ) : (
         <main className="flex-1 w-full max-w-[920px] mx-auto px-8 py-10">
-          <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-8 shadow-xl">
+          <div className="flex flex-col justify-between bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/80 rounded-xl p-8 shadow-xl transition-colors duration-200">
               <div>
-                {/* Clean Editorial Header */}
-                <div className="max-w-2xl mb-6">
-                  <h1 className="text-3xl font-semibold tracking-tight text-slate-900 leading-tight [text-wrap:balance]">
-                    Upload and audit engineering drawings
-                  </h1>
-                  <p className="mt-2.5 text-[15px] leading-relaxed text-slate-600">
-                    Upload a manufacturing drawing PDF to run an automated {selectedStandard} design
-                    review, inspect prioritized P0–P3 findings alongside the drawing preview, and
-                    sync files to your linked Google Drive folder.
-                  </p>
+                {/* Clean Editorial Header + Light/Dark Interface Switch */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+                  <div className="max-w-2xl">
+                    <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50 leading-tight [text-wrap:balance]">
+                      Upload and audit engineering drawings
+                    </h1>
+                    <p className="mt-2.5 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">
+                      Upload a manufacturing drawing PDF to run an automated {selectedStandard}{' '}
+                      design review, inspect prioritized P0–P3 findings alongside the drawing preview,
+                      and sync files to your linked Google Drive folder.
+                    </p>
+                  </div>
+
+                  {/* Light / Dark Interface Switch */}
+                  <div
+                    role="radiogroup"
+                    aria-label="Interface theme"
+                    className="relative grid grid-cols-2 w-[164px] shrink-0 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg select-none self-start"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-slate-900 dark:bg-sky-500 shadow-xs transition-transform duration-200 ease-out ${
+                        theme === 'dark' ? 'translate-x-full' : 'translate-x-0'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={theme === 'light'}
+                      onClick={() => setTheme('light')}
+                      className={`relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
+                        theme === 'light'
+                          ? 'text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                      }`}
+                    >
+                      <Sun className="w-3.5 h-3.5" />
+                      <span>Light</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={theme === 'dark'}
+                      onClick={() => setTheme('dark')}
+                      className={`relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
+                        theme === 'dark'
+                          ? 'text-slate-950'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                      }`}
+                    >
+                      <Moon className="w-3.5 h-3.5" />
+                      <span>Dark</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Google Drive Folder Destination Bar */}
                 <div
                   ref={driveSectionRef}
-                  className="mb-6 py-4 border-y border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="mb-6 py-4 border-y border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   {!isDriveConnected ? (
                     <>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-                          <span className="text-sm font-semibold text-slate-900">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                             Google Drive destination
                           </span>
                           {linkedFolder?.webViewLink && (
@@ -684,14 +756,14 @@ export default function App() {
                               href={linkedFolder.webViewLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:underline whitespace-nowrap"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-sky-400 hover:underline whitespace-nowrap"
                             >
                               <span>Open linked folder</span>
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                           {linkedFolder
                             ? `Sign in with Google to upload engineering drawings directly to "${linkedFolder.name}".`
                             : 'Sign in with Google to choose a Drive folder for uploaded engineering drawings.'}
@@ -702,15 +774,15 @@ export default function App() {
                   ) : (
                     <>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                           <span>Google Drive</span>
                           <span aria-hidden="true">·</span>
                           <span className="truncate">{googleUser?.email}</span>
                         </div>
                         {linkedFolder ? (
                           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 min-w-0">
-                              <Folder className="w-4 h-4 text-blue-700 shrink-0" />
+                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100 min-w-0">
+                              <Folder className="w-4 h-4 text-blue-700 dark:text-sky-400 shrink-0" />
                               <span className="truncate max-w-[260px]" title={linkedFolder.name}>
                                 {linkedFolder.name}
                               </span>
@@ -720,24 +792,24 @@ export default function App() {
                                 href={linkedFolder.webViewLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:underline whitespace-nowrap"
+                                className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-sky-400 hover:underline whitespace-nowrap"
                               >
                                 <span>Open in Drive</span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                             )}
-                            <label className="inline-flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+                            <label className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none">
                               <input
                                 type="checkbox"
                                 checked={autoUploadToDrive}
                                 onChange={(e) => setAutoUploadToDrive(e.target.checked)}
-                                className="rounded border-slate-300 text-blue-700 focus:ring-blue-600"
+                                className="rounded border-slate-300 dark:border-slate-600 text-blue-700 focus:ring-blue-600"
                               />
                               <span>Auto-upload on select</span>
                             </label>
                           </div>
                         ) : (
-                          <div className="mt-1 text-sm text-slate-700">
+                          <div className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                             No destination folder linked yet.
                           </div>
                         )}
@@ -747,7 +819,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setIsFolderModalOpen(true)}
-                          className="px-3.5 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                          className="px-3.5 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-lg transition-colors whitespace-nowrap shrink-0"
                         >
                           {linkedFolder ? 'Change Folder' : 'Choose Folder'}
                         </button>
@@ -756,7 +828,7 @@ export default function App() {
                           onClick={handleGoogleLogout}
                           title="Sign out of Google Drive"
                           aria-label="Sign out of Google Drive"
-                          className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors shrink-0"
                         >
                           <LogOut className="w-4 h-4" />
                         </button>
@@ -766,15 +838,15 @@ export default function App() {
                 </div>
 
                 {/* Audit Standard Horizontal Slider Selector */}
-                <div className="mb-6 pb-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="mb-6 pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="min-w-0">
                     <span
                       id="audit-standard-label"
-                      className="text-sm font-semibold text-slate-900"
+                      className="text-sm font-semibold text-slate-900 dark:text-slate-100"
                     >
                       Audit standard
                     </span>
-                    <p className="text-xs text-slate-500 mt-0.5 font-mono tabular-nums">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono tabular-nums">
                       {AUDIT_STANDARDS[selectedStandard].ruleCount} rules ·{' '}
                       {AUDIT_STANDARDS[selectedStandard].rulebookFile}
                     </p>
@@ -783,11 +855,11 @@ export default function App() {
                   <div
                     role="radiogroup"
                     aria-labelledby="audit-standard-label"
-                    className="relative grid grid-cols-2 w-full sm:w-[340px] shrink-0 p-1 bg-slate-100 border border-slate-200 rounded-lg select-none"
+                    className="relative grid grid-cols-2 w-full sm:w-[340px] shrink-0 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg select-none"
                   >
                     <span
                       aria-hidden="true"
-                      className={`pointer-events-none absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-slate-900 shadow-xs transition-transform duration-200 ease-out ${
+                      className={`pointer-events-none absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-slate-900 dark:bg-sky-500 shadow-xs transition-transform duration-200 ease-out ${
                         selectedStandard === 'ISO 1101:2017'
                           ? 'translate-x-full'
                           : 'translate-x-0'
@@ -804,8 +876,8 @@ export default function App() {
                           onClick={() => setSelectedStandard(standard)}
                           className={`relative z-10 px-3 py-2 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
                             isSelected
-                              ? 'text-white'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'text-white dark:text-slate-950'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                           }`}
                         >
                           {standard}
@@ -819,17 +891,17 @@ export default function App() {
                 {errorMessage && (
                   <div
                     role="alert"
-                    className="mb-6 flex items-start justify-between gap-4 px-4 py-3.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800"
+                    className="mb-6 flex items-start justify-between gap-4 px-4 py-3.5 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-lg text-sm text-red-800 dark:text-red-300"
                   >
                     <div className="flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-red-700 mt-0.5 shrink-0" />
+                      <AlertCircle className="w-4 h-4 text-red-700 dark:text-red-400 mt-0.5 shrink-0" />
                       <span>{errorMessage}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setErrorMessage(null)}
                       aria-label="Dismiss error"
-                      className="text-red-600 hover:text-red-900 p-0.5 rounded shrink-0"
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 p-0.5 rounded shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -840,14 +912,14 @@ export default function App() {
                 {noticeMessage && !errorMessage && (
                   <div
                     role="status"
-                    className="mb-6 flex items-center justify-between gap-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700"
+                    className="mb-6 flex items-center justify-between gap-4 px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200"
                   >
                     <span>{noticeMessage}</span>
                     <button
                       type="button"
                       onClick={() => setNoticeMessage(null)}
                       aria-label="Dismiss notice"
-                      className="text-slate-500 hover:text-slate-900 p-0.5 rounded shrink-0"
+                      className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 p-0.5 rounded shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -862,15 +934,15 @@ export default function App() {
                   onDrop={handleDrop}
                   className={`rounded-lg border-2 border-dashed transition-colors duration-150 px-8 py-12 flex flex-col items-center justify-center text-center min-h-[280px] ${
                     isDragging
-                      ? 'border-blue-600 bg-blue-50/50'
-                      : 'border-slate-300 bg-[#FAFBFD] hover:border-slate-400'
+                      ? 'border-blue-600 dark:border-sky-400 bg-blue-50/50 dark:bg-sky-950/30'
+                      : 'border-slate-300 dark:border-slate-700 bg-[#FAFBFD] dark:bg-slate-950/50 hover:border-slate-400 dark:hover:border-slate-500'
                   }`}
                 >
                   <div
                     className={`w-12 h-12 rounded-lg flex items-center justify-center mb-5 transition-colors duration-150 ${
                       isDragging
-                        ? 'bg-blue-700 text-white'
-                        : 'bg-white border border-slate-200 text-slate-700'
+                        ? 'bg-blue-700 dark:bg-sky-500 text-white dark:text-slate-950'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200'
                     }`}
                   >
                     <Upload className="w-5 h-5" />
@@ -878,14 +950,14 @@ export default function App() {
 
                   <label
                     htmlFor="pdf-file-input"
-                    className="text-base font-semibold text-slate-900 cursor-pointer"
+                    className="text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer"
                   >
                     {isDragging
                       ? 'Release to load PDF document'
                       : 'Drop a Engineering Drawing here, or choose from your computer'}
                   </label>
 
-                  <p className="mt-1.5 text-sm text-slate-500">
+                  <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
                     Accepts .pdf documents <span aria-hidden="true">·</span>{' '}
                     {isDriveConnected && linkedFolder
                       ? autoUploadToDrive
@@ -904,10 +976,11 @@ export default function App() {
                       accept=".pdf,application/pdf"
                       onChange={handleFileInputChange}
                       aria-describedby="pdf-upload-hint"
-                      className="block w-full text-sm text-slate-600 bg-white border border-slate-200 rounded-lg p-1.5 cursor-pointer
+                      className="block w-full text-sm text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 cursor-pointer
                         file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
                         file:text-sm file:font-medium file:bg-slate-900 file:text-white
-                        hover:file:bg-slate-800 file:transition-colors file:cursor-pointer
+                        dark:file:bg-sky-500 dark:file:text-slate-950
+                        hover:file:bg-slate-800 dark:hover:file:bg-sky-400 file:transition-colors file:cursor-pointer
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                     />
                     <p id="pdf-upload-hint" className="sr-only">
@@ -919,24 +992,24 @@ export default function App() {
 
                 {/* Selected File Summary & Conditional Preview Button */}
                 {selectedFile ? (
-                  <div aria-live="polite" className="mt-6 pt-6 border-t border-slate-200">
+                  <div aria-live="polite" className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                       <div className="flex items-start gap-3.5 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 mt-0.5">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-slate-500 mb-0.5">
+                          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">
                             Selected PDF File
                           </div>
                           <p
                             data-testid="selected-filename"
-                            className="text-base font-semibold text-slate-900 truncate"
+                            className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate"
                             title={selectedFile.name}
                           >
                             {selectedFile.name}
                           </p>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 font-mono tabular-nums">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
                             <span>{formatFileSize(selectedFile.size)}</span>
                             <span aria-hidden="true">·</span>
                             <span>
@@ -963,7 +1036,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setIsPreviewOpen(true)}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 dark:bg-sky-500 dark:hover:bg-sky-400 dark:text-slate-950 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
                         >
                           <ClipboardCheck className="w-4 h-4" />
                           <span>
@@ -980,7 +1053,7 @@ export default function App() {
                             type="button"
                             disabled={uploadState.status === 'uploading'}
                             onClick={() => void initiateDriveUpload(selectedFile, linkedFolder)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-slate-800 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                           >
                             <CloudUpload className="w-4 h-4" />
                             <span>
@@ -993,7 +1066,7 @@ export default function App() {
                           type="button"
                           onClick={triggerFilePicker}
                           title="Choose a different PDF"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
                           <span>Replace</span>
@@ -1004,7 +1077,7 @@ export default function App() {
                           onClick={handleClearFile}
                           aria-label="Remove selected file"
                           title="Remove selected file"
-                          className="p-2.5 text-slate-500 hover:text-red-700 hover:bg-red-50 border border-slate-200 rounded-lg transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                          className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1013,22 +1086,29 @@ export default function App() {
 
                     {/* Google Drive Upload Status Feedback */}
                     {uploadState.status === 'uploading' && (
-                      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-600">
-                        <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-blue-700 rounded-full animate-spin shrink-0" />
+                      <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                        <div className="w-3.5 h-3.5 border-2 border-slate-300 dark:border-slate-700 border-t-blue-700 dark:border-t-sky-400 rounded-full animate-spin shrink-0" />
                         <span>
-                          Uploading <span className="font-medium text-slate-900">{uploadState.fileName}</span> to{' '}
-                          <span className="font-medium text-slate-900">{linkedFolder?.name}</span>...
+                          Uploading{' '}
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            {uploadState.fileName}
+                          </span>{' '}
+                          to{' '}
+                          <span className="font-medium text-slate-900 dark:text-slate-100">
+                            {linkedFolder?.name}
+                          </span>
+                          ...
                         </span>
                       </div>
                     )}
 
                     {uploadState.status === 'uploaded' && (
-                      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-4 text-xs">
-                        <div className="flex items-center gap-2 text-emerald-700">
+                      <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 text-xs">
+                        <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
                           <CheckCircle2 className="w-4 h-4 shrink-0" />
                           <span>
                             Saved in Google Drive folder{' '}
-                            <span className="font-semibold text-slate-900">
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">
                               {uploadState.folderName}
                             </span>
                           </span>
@@ -1038,7 +1118,7 @@ export default function App() {
                             href={uploadState.driveFile.webViewLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-medium text-blue-700 hover:underline whitespace-nowrap shrink-0"
+                            className="inline-flex items-center gap-1 font-medium text-blue-700 dark:text-sky-400 hover:underline whitespace-nowrap shrink-0"
                           >
                             <span>View in Drive</span>
                             <ExternalLink className="w-3 h-3" />
@@ -1048,7 +1128,7 @@ export default function App() {
                     )}
 
                     {uploadState.status === 'error' && (
-                      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-4 text-xs text-red-700">
+                      <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 text-xs text-red-700 dark:text-red-400">
                         <div className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 shrink-0" />
                           <span>{uploadState.message}</span>
@@ -1057,7 +1137,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => void initiateDriveUpload(selectedFile, linkedFolder)}
-                            className="font-medium text-red-800 hover:underline whitespace-nowrap shrink-0"
+                            className="font-medium text-red-800 dark:text-red-300 hover:underline whitespace-nowrap shrink-0"
                           >
                             Retry upload
                           </button>
@@ -1066,25 +1146,25 @@ export default function App() {
                     )}
                     {/* Design Review Summary Status Row (when returning to Upload page) */}
                     {auditState.status === 'complete' && (
-                      <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs">
-                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-slate-600 font-mono tabular-nums">
-                          <span className="font-sans font-medium text-slate-900">
+                      <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-slate-600 dark:text-slate-400 font-mono tabular-nums">
+                          <span className="font-sans font-medium text-slate-900 dark:text-slate-100">
                             {auditState.report.rulebookVersion} review ready
                           </span>
                           <span aria-hidden="true">·</span>
-                          <span className="text-red-700 font-semibold">
+                          <span className="text-red-700 dark:text-red-400 font-semibold">
                             P0 {auditState.report.findings.filter((f) => f.priority === 'P0').length}
                           </span>
                           <span aria-hidden="true">·</span>
-                          <span className="text-orange-700 font-semibold">
+                          <span className="text-orange-700 dark:text-orange-400 font-semibold">
                             P1 {auditState.report.findings.filter((f) => f.priority === 'P1').length}
                           </span>
                           <span aria-hidden="true">·</span>
-                          <span className="text-amber-700 font-semibold">
+                          <span className="text-amber-700 dark:text-amber-400 font-semibold">
                             P2 {auditState.report.findings.filter((f) => f.priority === 'P2').length}
                           </span>
                           <span aria-hidden="true">·</span>
-                          <span className="text-slate-600 font-semibold">
+                          <span className="text-slate-600 dark:text-slate-300 font-semibold">
                             P3 {auditState.report.findings.filter((f) => f.priority === 'P3').length}
                           </span>
                         </div>
@@ -1103,7 +1183,7 @@ export default function App() {
                                   );
                                 }
                               }}
-                              className="font-medium text-slate-700 hover:text-slate-900 underline underline-offset-2 whitespace-nowrap"
+                              className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline underline-offset-2 whitespace-nowrap"
                             >
                               Re-run with {selectedStandard}
                             </button>
@@ -1111,7 +1191,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => setIsPreviewOpen(true)}
-                            className="font-medium text-blue-700 hover:underline whitespace-nowrap"
+                            className="font-medium text-blue-700 dark:text-sky-400 hover:underline whitespace-nowrap"
                           >
                             View P0–P3 findings
                           </button>
@@ -1120,12 +1200,12 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between gap-4 text-sm text-slate-500">
+                  <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
                     <span>No file selected yet.</span>
                     <button
                       type="button"
                       onClick={handleLoadSample}
-                      className="font-medium text-slate-700 hover:text-blue-700 underline underline-offset-4 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
+                      className="font-medium text-slate-700 dark:text-slate-300 hover:text-blue-700 dark:hover:text-sky-400 underline underline-offset-4 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
                     >
                       Load a sample engineering drawing to test review
                     </button>
@@ -1134,15 +1214,15 @@ export default function App() {
               </div>
 
               {/* Quiet Desktop Footnote Strip */}
-              <div className="mt-8 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+              <div className="mt-8 pt-5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
                 <span>
                   {isDriveConnected && linkedFolder
                     ? `Connected to Google Drive · Destination: ${linkedFolder.name}`
                     : 'Local PDF preview · Optional Google Drive folder sync'}
                 </span>
                 <span>
-                  Press <kbd className="font-mono text-slate-700">Esc</kbd> inside preview to
-                  return here
+                  Press <kbd className="font-mono text-slate-700 dark:text-slate-300">Esc</kbd> inside
+                  preview to return here
                 </span>
               </div>
           </div>

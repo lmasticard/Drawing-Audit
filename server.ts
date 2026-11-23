@@ -38,6 +38,13 @@ interface RulebookDigest {
   systemInstruction: string;
 }
 
+interface AuditBoundingBox {
+  ymin: number;
+  xmin: number;
+  ymax: number;
+  xmax: number;
+}
+
 interface AuditFindingPayload {
   priority: AuditPriority;
   pageNumber: number;
@@ -48,6 +55,7 @@ interface AuditFindingPayload {
   asmeCitation?: string;
   costImpact: boolean;
   category: string;
+  box_2d?: number[];
 }
 
 interface AuditRequestBody {
@@ -126,6 +134,7 @@ Finding Structure Requirements:
   - asmeCitation: Exact clause ID from the rulebook below (e.g., "${citationExample}") if a standard rule applies, or empty string "" for general DFM/cost/drafting findings.
   - costImpact: true if the issue or design choice has a high impact on manufacturing price/cost, else false.
   - category: One of "GD&T Compliance", "Manufacturability & Cost", "Dimensions & Tolerances", "Clarity & Title Block", "Design Intent".
+  - box_2d: Tight normalized bounding box [ymin, xmin, ymax, xmax] as integers on a 0 to 1000 scale relative to the unrotated referenced page (0,0 = top-left; 1000,1000 = bottom-right) pinpointing the exact dimension, feature control frame, datum symbol, view feature, note, or title block cell where this issue occurs. If an expected element is missing (e.g., missing title block entry or missing datum on a view), tightly box the title block cell or view area where it belongs. Return [] ONLY if the finding truly applies globally to the entire sheet with no localized region.
 - Keep generalAssessment to a crisp 1-2 sentence summary of the drawing's overall manufacturing readiness, quality, and clarity.
 
 === ${standard} AUDIT RULEBOOK (${ruleCount} RULES) ===
@@ -230,6 +239,14 @@ const AUDIT_RESPONSE_SCHEMA = {
             ],
             description: 'Primary engineering review domain for this finding.',
           },
+          box_2d: {
+            type: Type.ARRAY,
+            description:
+              'Tight normalized 0-1000 bounding box [ymin, xmin, ymax, xmax] locating the issue on the page (0,0 = top-left; 1000,1000 = bottom-right), or [] if strictly whole-sheet global.',
+            items: {
+              type: Type.INTEGER,
+            },
+          },
         },
         required: [
           'priority',
@@ -241,12 +258,57 @@ const AUDIT_RESPONSE_SCHEMA = {
           'asmeCitation',
           'costImpact',
           'category',
+          'box_2d',
         ],
       },
     },
   },
   required: ['drawingName', 'generalAssessment', 'findings'],
 };
+
+function normalizeBoundingBox(raw: unknown): AuditBoundingBox | undefined {
+  if (!Array.isArray(raw) || raw.length !== 4) {
+    return undefined;
+  }
+  const nums = raw.map((v) => Number(v));
+  if (nums.some((n) => !Number.isFinite(n))) {
+    return undefined;
+  }
+
+  let [ymin, xmin, ymax, xmax] = nums.map((n) => Math.max(0, Math.min(1000, Math.round(n))));
+
+  if (ymin > ymax) {
+    [ymin, ymax] = [ymax, ymin];
+  }
+  if (xmin > xmax) {
+    [xmin, xmax] = [xmax, xmin];
+  }
+
+  const width = xmax - xmin;
+  const height = ymax - ymin;
+
+  // Ignore degenerate zero-area boxes or full-sheet catch-all boxes (>96% of both axes)
+  if (width < 2 || height < 2) {
+    return undefined;
+  }
+  if (width > 960 && height > 960) {
+    return undefined;
+  }
+
+  // Ensure very tiny callout points remain visibly selectable (min 14 units ~1.4%)
+  if (width < 14) {
+    const cx = Math.round((xmin + xmax) / 2);
+    xmin = Math.max(0, cx - 7);
+    xmax = Math.min(1000, cx + 7);
+  }
+  if (height < 14) {
+    const cy = Math.round((ymin + ymax) / 2);
+    ymin = Math.max(0, cy - 7);
+    ymax = Math.min(1000, cy + 7);
+  }
+
+  return { ymin, xmin, ymax, xmax };
+}
 
 function formatMarkdownReport(
   drawingName: string,
@@ -459,7 +521,7 @@ async function startServer() {
 
 Evaluate all visible views, sections, dimensions, tolerance indicators / feature control frames, datum references, general notes, tolerances, material/finish callouts, and title block information against the ${activeRulebook.standard} rulebook and practical manufacturing / cost-driver best practices.
 
-Return structured JSON containing drawingName, generalAssessment (1-2 sentences), and exhaustive prioritized actionable findings (P0, P1, P2, P3).`,
+Return structured JSON containing drawingName, generalAssessment (1-2 sentences), and exhaustive prioritized actionable findings (P0, P1, P2, P3), including tight normalized [ymin, xmin, ymax, xmax] (0-1000) box_2d coordinates for every localized finding so it can be highlighted directly on the drawing.`,
       });
 
       const ai = getGeminiClient();
@@ -538,6 +600,7 @@ Return structured JSON containing drawingName, generalAssessment (1-2 sentences)
               typeof f.category === 'string' && f.category.trim()
                 ? f.category.trim()
                 : 'GD&T Compliance',
+            boundingBox: normalizeBoundingBox(f.box_2d),
           };
         })
         .sort((a, b) => PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority));

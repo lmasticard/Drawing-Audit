@@ -27,6 +27,13 @@ export const AUDIT_STANDARDS: Record<
   },
 };
 
+export interface AuditBoundingBox {
+  ymin: number;
+  xmin: number;
+  ymax: number;
+  xmax: number;
+}
+
 export interface AuditFinding {
   id: string;
   priority: AuditPriority;
@@ -38,6 +45,7 @@ export interface AuditFinding {
   asmeCitation?: string;
   costImpact: boolean;
   category: string;
+  boundingBox?: AuditBoundingBox;
 }
 
 export interface DrawingAuditReport {

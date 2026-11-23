@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Check,
   Copy,
+  Crosshair,
   Download,
   FileDown,
   RefreshCw,
@@ -25,6 +26,9 @@ interface AuditReviewPanelProps {
   selectedStandard: AuditStandard;
   auditState: AuditRunState;
   activeFindingId: string | null;
+  hoveredFindingId?: string | null;
+  canvasFocusSignal?: number;
+  onHoverFinding?: (findingId: string | null) => void;
   onSelectFinding: (finding: AuditFinding) => void;
   onRunAudit: () => void;
   onCancelAudit: () => void;
@@ -34,17 +38,17 @@ type PriorityFilter = 'ALL' | AuditPriority;
 type ReviewViewTab = 'structured' | 'markdown';
 
 const PRIORITY_TEXT_STYLE: Record<AuditPriority, string> = {
-  P0: 'text-red-700',
-  P1: 'text-orange-700',
-  P2: 'text-amber-700',
-  P3: 'text-slate-600',
+  P0: 'text-red-700 dark:text-red-400',
+  P1: 'text-orange-700 dark:text-orange-400',
+  P2: 'text-amber-700 dark:text-amber-400',
+  P3: 'text-slate-600 dark:text-slate-300',
 };
 
 const PRIORITY_HEADER_BG: Record<AuditPriority, string> = {
-  P0: 'bg-red-50/60',
-  P1: 'bg-orange-50/50',
-  P2: 'bg-amber-50/50',
-  P3: 'bg-slate-50',
+  P0: 'bg-red-50/60 dark:bg-red-950/40',
+  P1: 'bg-orange-50/50 dark:bg-orange-950/35',
+  P2: 'bg-amber-50/50 dark:bg-amber-950/35',
+  P3: 'bg-slate-50 dark:bg-slate-800/80',
 };
 
 export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
@@ -52,6 +56,9 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
   selectedStandard,
   auditState,
   activeFindingId,
+  hoveredFindingId = null,
+  canvasFocusSignal = 0,
+  onHoverFinding,
   onSelectFinding,
   onRunAudit,
   onCancelAudit,
@@ -61,6 +68,8 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewTab, setViewTab] = useState<ReviewViewTab>('structured');
   const [copied, setCopied] = useState<boolean>(false);
+  const findingItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
+  const pendingScrollIdRef = useRef<string | null>(null);
 
   const report = auditState.status === 'complete' ? auditState.report : null;
   const activeStandardLabel =
@@ -101,6 +110,15 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
     });
   }, [report, priorityFilter, costImpactOnly, searchQuery]);
 
+  const findingNumberMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!report) return map;
+    report.findings.forEach((f, idx) => {
+      map.set(f.id, idx + 1);
+    });
+    return map;
+  }, [report]);
+
   const groupedByPriority = useMemo(() => {
     const groups: Array<{ priority: AuditPriority; items: AuditFinding[] }> = [];
     for (const priority of PRIORITY_ORDER) {
@@ -110,6 +128,43 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
     }
     return groups;
   }, [filteredFindings, priorityFilter]);
+
+  // When a marker is clicked on the PDF canvas, reveal its card if hidden by filters/tab
+  useEffect(() => {
+    if (canvasFocusSignal <= 0 || !activeFindingId || !report) return;
+    const existsInReport = report.findings.some((f) => f.id === activeFindingId);
+    if (!existsInReport) return;
+
+    pendingScrollIdRef.current = activeFindingId;
+    setPriorityFilter((prev) => {
+      if (prev === 'ALL') return prev;
+      const target = report.findings.find((f) => f.id === activeFindingId);
+      return target && target.priority === prev ? prev : 'ALL';
+    });
+    setCostImpactOnly((prev) => {
+      if (!prev) return prev;
+      const target = report.findings.find((f) => f.id === activeFindingId);
+      return target?.costImpact ? prev : false;
+    });
+    setSearchQuery((prev) => (prev.trim() ? '' : prev));
+    setViewTab('structured');
+  }, [canvasFocusSignal, activeFindingId, report]);
+
+  // Scroll the newly revealed card into view once rendered in the structured list
+  useEffect(() => {
+    const targetId = pendingScrollIdRef.current;
+    if (!targetId || viewTab !== 'structured') return;
+    if (!filteredFindings.some((f) => f.id === targetId)) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const node = findingItemRefs.current[targetId];
+      if (node) {
+        node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        pendingScrollIdRef.current = null;
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [canvasFocusSignal, filteredFindings, viewTab]);
 
   const handleCopyMarkdown = async () => {
     if (!report) return;
@@ -154,14 +209,16 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
   return (
     <aside
       aria-label="Engineering Design Review"
-      className="w-full lg:w-[46%] xl:w-[44%] min-w-0 lg:min-w-[440px] max-w-full bg-white border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col min-h-0"
+      className="w-full lg:w-[46%] xl:w-[44%] min-w-0 lg:min-w-[440px] max-w-full bg-white dark:bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 flex flex-col min-h-0 transition-colors duration-200"
     >
       {/* Panel Header */}
-      <div className="px-6 py-4 border-b border-slate-200 space-y-3 shrink-0">
+      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 space-y-3 shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-base font-semibold text-slate-900 truncate">Design Review</h2>
-            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 truncate">
+              Design Review
+            </h2>
+            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <span>{activeStandardLabel}</span>
               <span aria-hidden="true">·</span>
               <span className="font-mono tabular-nums">{activeRuleCount} rules</span>
@@ -182,7 +239,7 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
               onClick={onRunAudit}
               title="Re-run engineering review"
               aria-label="Re-run engineering review"
-              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -191,14 +248,14 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
 
         {report && (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200/80">
+            <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200/80 dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => setViewTab('structured')}
                 className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                   viewTab === 'structured'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 Findings
@@ -208,8 +265,8 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                 onClick={() => setViewTab('markdown')}
                 className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                   viewTab === 'markdown'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
                 Markdown
@@ -220,7 +277,7 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
               <button
                 type="button"
                 onClick={handleExportPdf}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 <span>Export as PDF</span>
@@ -229,9 +286,13 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
               <button
                 type="button"
                 onClick={() => void handleCopyMarkdown()}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
                 <span>{copied ? 'Copied' : 'Copy MD'}</span>
               </button>
 
@@ -240,7 +301,7 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                 onClick={handleDownloadMarkdown}
                 title="Download Markdown report (.md)"
                 aria-label="Download Markdown report"
-                className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
               >
                 <Download className="w-3.5 h-3.5" />
               </button>
@@ -252,14 +313,14 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
       {/* State 1: Analyzing */}
       {auditState.status === 'analyzing' && (
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="pb-5 border-b border-slate-200 flex items-start justify-between gap-4">
+          <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-4 h-4 mt-0.5 border-2 border-slate-300 border-t-blue-700 rounded-full animate-spin shrink-0" />
+              <div className="w-4 h-4 mt-0.5 border-2 border-slate-300 dark:border-slate-700 border-t-blue-700 dark:border-t-sky-400 rounded-full animate-spin shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Analyzing drawing for manufacturing review
                 </p>
-                <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Checking GD&amp;T / GPS callouts, datum reference frames, tolerance stackups,
                   title block completeness, and high-cost machining drivers against{' '}
                   {activeRuleCount} {activeStandardLabel} rules.
@@ -269,7 +330,7 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
             <button
               type="button"
               onClick={onCancelAudit}
-              className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              className="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
             >
               Cancel
             </button>
@@ -278,20 +339,23 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
           {/* Geometry-matched Skeleton Rows */}
           <div className="mt-5 space-y-6 animate-pulse" aria-hidden="true">
             <div className="space-y-2">
-              <div className="h-3.5 w-32 bg-slate-200 rounded" />
-              <div className="h-3.5 w-full bg-slate-100 rounded" />
-              <div className="h-3.5 w-5/6 bg-slate-100 rounded" />
+              <div className="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="h-3.5 w-full bg-slate-100 dark:bg-slate-800/70 rounded" />
+              <div className="h-3.5 w-5/6 bg-slate-100 dark:bg-slate-800/70 rounded" />
             </div>
             {[0, 1, 2, 3].map((idx) => (
-              <div key={idx} className="pt-5 border-t border-slate-100 space-y-2.5">
+              <div
+                key={idx}
+                className="pt-5 border-t border-slate-100 dark:border-slate-800 space-y-2.5"
+              >
                 <div className="flex items-center gap-2">
-                  <div className="h-3.5 w-8 bg-slate-200 rounded" />
-                  <div className="h-3.5 w-40 bg-slate-200 rounded" />
-                  <div className="h-3.5 w-28 bg-slate-100 rounded" />
+                  <div className="h-3.5 w-8 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="h-3.5 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="h-3.5 w-28 bg-slate-100 dark:bg-slate-800/70 rounded" />
                 </div>
-                <div className="h-3.5 w-full bg-slate-100 rounded" />
-                <div className="h-3.5 w-11/12 bg-slate-100 rounded" />
-                <div className="h-3.5 w-4/5 bg-slate-100 rounded" />
+                <div className="h-3.5 w-full bg-slate-100 dark:bg-slate-800/70 rounded" />
+                <div className="h-3.5 w-11/12 bg-slate-100 dark:bg-slate-800/70 rounded" />
+                <div className="h-3.5 w-4/5 bg-slate-100 dark:bg-slate-800/70 rounded" />
               </div>
             ))}
           </div>
@@ -301,15 +365,17 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
       {/* State 2: Idle (e.g., cancelled) */}
       {auditState.status === 'idle' && (
         <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 text-center">
-          <h3 className="text-base font-semibold text-slate-900">Ready to review drawing</h3>
-          <p className="mt-2 max-w-sm text-sm text-slate-600 leading-relaxed">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+            Ready to review drawing
+          </h3>
+          <p className="mt-2 max-w-sm text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             Run a formal Senior Mechanical Engineer design review against the {selectedStandard}{' '}
             rulebook to categorize P0–P3 findings and flag manufacturing cost drivers.
           </p>
           <button
             type="button"
             onClick={onRunAudit}
-            className="mt-6 px-5 py-2.5 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+            className="mt-6 px-5 py-2.5 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 dark:bg-sky-500 dark:hover:bg-sky-400 dark:text-slate-950 rounded-lg transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
           >
             Run Design Review
           </button>
@@ -321,13 +387,15 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
         <div className="flex-1 px-6 py-8">
           <div
             role="alert"
-            className="p-5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-900"
+            className="p-5 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-lg text-sm text-red-900 dark:text-red-200"
           >
             <div className="flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-red-700 mt-0.5 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-700 dark:text-red-400 mt-0.5 shrink-0" />
               <div className="min-w-0">
-                <p className="font-semibold text-red-900">Drawing analysis could not complete</p>
-                <p className="mt-1.5 text-red-800 leading-relaxed break-words">
+                <p className="font-semibold text-red-900 dark:text-red-200">
+                  Drawing analysis could not complete
+                </p>
+                <p className="mt-1.5 text-red-800 dark:text-red-300 leading-relaxed break-words">
                   {auditState.message}
                 </p>
                 <div className="mt-4">
@@ -350,41 +418,43 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
       {report && (
         <>
           {/* General Assessment Band */}
-          <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200 shrink-0">
-            <div className="text-xs text-slate-500">
+          <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 shrink-0">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               <span>Drawing</span>
               <span className="mx-1.5" aria-hidden="true">
                 ·
               </span>
-              <span className="font-medium text-slate-800">{report.drawingName}</span>
+              <span className="font-medium text-slate-800 dark:text-slate-100">
+                {report.drawingName}
+              </span>
             </div>
-            <p className="mt-1.5 text-sm text-slate-800 leading-relaxed">
+            <p className="mt-1.5 text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
               {report.generalAssessment}
             </p>
           </div>
 
           {viewTab === 'markdown' ? (
             <div className="flex-1 flex flex-col min-h-0">
-              <div className="px-6 py-2.5 border-b border-slate-200 bg-white flex items-center justify-between gap-3 text-xs text-slate-500 shrink-0">
+              <div className="px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 shrink-0">
                 <span>Formatted for direct copy-paste into Google Docs</span>
                 <button
                   type="button"
                   onClick={() => void handleCopyMarkdown()}
-                  className="font-medium text-blue-700 hover:underline whitespace-nowrap shrink-0"
+                  className="font-medium text-blue-700 dark:text-sky-400 hover:underline whitespace-nowrap shrink-0"
                 >
                   {copied ? 'Copied to clipboard' : 'Copy all Markdown'}
                 </button>
               </div>
-              <pre className="flex-1 overflow-auto p-6 text-xs font-mono leading-relaxed text-slate-800 bg-[#FAFBFD] whitespace-pre-wrap break-words select-all">
+              <pre className="flex-1 overflow-auto p-6 text-xs font-mono leading-relaxed text-slate-800 dark:text-slate-200 bg-[#FAFBFD] dark:bg-slate-950 whitespace-pre-wrap break-words select-all">
                 {report.markdown}
               </pre>
             </div>
           ) : (
             <>
               {/* Priority Filter Bar & Search */}
-              <div className="px-6 py-3 border-b border-slate-200 bg-white space-y-2.5 shrink-0">
+              <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5 shrink-0">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <div className="flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200/80">
+                  <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200/80 dark:border-slate-700">
                     {(['ALL', 'P0', 'P1', 'P2', 'P3'] as PriorityFilter[]).map((level) => {
                       const active = priorityFilter === level;
                       const count = counts[level];
@@ -395,8 +465,8 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                           onClick={() => setPriorityFilter(level)}
                           className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 font-mono tabular-nums ${
                             active
-                              ? 'bg-white text-slate-900 shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                           }`}
                         >
                           {level === 'ALL' ? `All (${count})` : `${level} (${count})`}
@@ -412,8 +482,8 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                       aria-pressed={costImpactOnly}
                       className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 font-mono tabular-nums ${
                         costImpactOnly
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                          ? 'bg-slate-900 text-white border-slate-900 dark:bg-sky-500 dark:text-slate-950 dark:border-sky-500'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                       }`}
                     >
                       Cost impact ({counts.COST})
@@ -430,14 +500,14 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Filter findings by view, zone, clause, or keyword..."
                     aria-label="Filter findings"
-                    className="w-full h-8 pl-8 pr-8 text-xs text-slate-900 bg-slate-50 border border-slate-200 rounded-lg placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                    className="w-full h-8 pl-8 pr-8 text-xs text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
                       aria-label="Clear filter"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-700"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -449,7 +519,7 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
               <div className="flex-1 overflow-y-auto">
                 {filteredFindings.length === 0 ? (
                   <div className="px-6 py-12 text-center">
-                    <p className="text-sm font-medium text-slate-800">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                       {report.findings.length === 0
                         ? 'No actionable issues identified.'
                         : 'No findings match the current filter.'}
@@ -462,21 +532,21 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                           setCostImpactOnly(false);
                           setSearchQuery('');
                         }}
-                        className="mt-3 text-xs font-medium text-blue-700 hover:underline"
+                        className="mt-3 text-xs font-medium text-blue-700 dark:text-sky-400 hover:underline"
                       >
                         Reset filters
                       </button>
                     )}
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-200">
+                  <div className="divide-y divide-slate-200 dark:divide-slate-800">
                     {groupedByPriority.map(({ priority, items }) => {
                       const meta = PRIORITY_META[priority];
                       return (
                         <section key={priority} aria-label={meta.headingLabel}>
                           {/* Priority Group Header */}
                           <div
-                            className={`sticky top-0 z-10 px-6 py-2.5 border-b border-slate-200 flex items-center justify-between gap-3 ${PRIORITY_HEADER_BG[priority]}`}
+                            className={`sticky top-0 z-10 px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 backdrop-blur-xs ${PRIORITY_HEADER_BG[priority]}`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <span
@@ -484,30 +554,43 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                               >
                                 {priority}
                               </span>
-                              <span className="text-xs font-semibold text-slate-900 truncate">
+                              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
                                 {meta.headingLabel.replace(`${priority} `, '').replace(/^\(|\)$/g, '')}
                               </span>
                             </div>
-                            <span className="text-xs font-mono tabular-nums text-slate-500 shrink-0">
+                            <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
                               {items.length}
                             </span>
                           </div>
 
                           {items.length === 0 ? (
-                            <div className="px-6 py-4 text-xs text-slate-500">
+                            <div className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
                               No {meta.headingLabel} issues identified.
                             </div>
                           ) : (
-                            <ul className="divide-y divide-slate-100">
+                            <ul className="divide-y divide-slate-100 dark:divide-slate-800/80">
                               {items.map((finding) => {
                                 const isSelected = finding.id === activeFindingId;
+                                const isHovered = finding.id === hoveredFindingId;
+                                const findingNum = findingNumberMap.get(finding.id);
                                 return (
-                                  <li key={finding.id}>
+                                  <li
+                                    key={finding.id}
+                                    ref={(el) => {
+                                      findingItemRefs.current[finding.id] = el;
+                                    }}
+                                  >
                                     <button
                                       type="button"
                                       onClick={() => onSelectFinding(finding)}
+                                      onMouseEnter={() => onHoverFinding?.(finding.id)}
+                                      onMouseLeave={() => onHoverFinding?.(null)}
                                       className={`w-full text-left px-6 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 ${
-                                        isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50/90'
+                                        isSelected
+                                          ? 'bg-blue-50/70 dark:bg-sky-950/50 ring-1 ring-inset ring-blue-200 dark:ring-sky-700'
+                                          : isHovered
+                                            ? 'bg-slate-50 dark:bg-slate-800/70'
+                                            : 'hover:bg-slate-50/90 dark:hover:bg-slate-800/60'
                                       }`}
                                     >
                                       {/* Unboxed Metadata Row (Zero-Pill Discipline) */}
@@ -516,39 +599,69 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                                           className={`font-mono font-semibold ${PRIORITY_TEXT_STYLE[finding.priority]}`}
                                         >
                                           {finding.priority}
+                                          {findingNum !== undefined ? ` #${findingNum}` : ''}
                                         </span>
-                                        <span className="text-slate-300" aria-hidden="true">
+                                        <span
+                                          className="text-slate-300 dark:text-slate-600"
+                                          aria-hidden="true"
+                                        >
                                           ·
                                         </span>
-                                        <span className="font-semibold text-slate-900">
+                                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                                           {finding.location}
                                         </span>
                                         {report.pageCount > 1 && (
                                           <>
-                                            <span className="text-slate-300" aria-hidden="true">
+                                            <span
+                                              className="text-slate-300 dark:text-slate-600"
+                                              aria-hidden="true"
+                                            >
                                               ·
                                             </span>
-                                            <span className="font-mono tabular-nums text-slate-500">
+                                            <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
                                               Sheet {finding.pageNumber}
                                             </span>
                                           </>
                                         )}
                                         {finding.asmeCitation && (
                                           <>
-                                            <span className="text-slate-300" aria-hidden="true">
+                                            <span
+                                              className="text-slate-300 dark:text-slate-600"
+                                              aria-hidden="true"
+                                            >
                                               ·
                                             </span>
-                                            <span className="font-mono text-blue-700">
+                                            <span className="font-mono text-blue-700 dark:text-sky-400">
                                               {finding.asmeCitation}
+                                            </span>
+                                          </>
+                                        )}
+                                        {finding.boundingBox && (
+                                          <>
+                                            <span
+                                              className="text-slate-300 dark:text-slate-600"
+                                              aria-hidden="true"
+                                            >
+                                              ·
+                                            </span>
+                                            <span
+                                              className="inline-flex items-center gap-1 font-mono text-slate-500 dark:text-slate-400"
+                                              title="Located on drawing overlay"
+                                            >
+                                              <Crosshair className="w-3 h-3 text-blue-600 dark:text-sky-400" />
+                                              <span>Pinned</span>
                                             </span>
                                           </>
                                         )}
                                         {finding.costImpact && (
                                           <>
-                                            <span className="text-slate-300" aria-hidden="true">
+                                            <span
+                                              className="text-slate-300 dark:text-slate-600"
+                                              aria-hidden="true"
+                                            >
                                               ·
                                             </span>
-                                            <span className="font-medium text-amber-800">
+                                            <span className="font-medium text-amber-800 dark:text-amber-400">
                                               High cost impact
                                             </span>
                                           </>
@@ -557,13 +670,17 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
 
                                       {/* Issue -> Impact -> Recommended Fix */}
                                       <div className="mt-2 space-y-1.5 text-[13px] leading-relaxed">
-                                        <p className="text-slate-900">{finding.description}</p>
-                                        <p className="text-slate-600">
-                                          <span className="font-medium text-slate-700">Impact: </span>
+                                        <p className="text-slate-900 dark:text-slate-100">
+                                          {finding.description}
+                                        </p>
+                                        <p className="text-slate-600 dark:text-slate-400">
+                                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                                            Impact:{' '}
+                                          </span>
                                           {finding.impact}
                                         </p>
-                                        <p className="text-slate-700">
-                                          <span className="font-medium text-slate-900">
+                                        <p className="text-slate-700 dark:text-slate-300">
+                                          <span className="font-medium text-slate-900 dark:text-slate-100">
                                             Recommended fix:{' '}
                                           </span>
                                           {finding.recommendedFix}
