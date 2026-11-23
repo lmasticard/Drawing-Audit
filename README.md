@@ -127,6 +127,7 @@ Findings are strictly categorized into four engineering priority tiers and forma
 │       ├── exportAuditPdf.ts                    # Client-side A4 PDF report generator (jsPDF)
 │       └── pdfHelpers.ts                        # pdfjs-dist worker setup, inspection & sample PDF
 ├── public/assets/aistudio/                      # Background tile & README screenshots (reference PDFs gitignored)
+├── CHANGELOG.md                                 # Chronological release notes, additions, and fixes
 ├── .env.example                                 # Required environment variables template
 └── package.json
 ```
@@ -190,4 +191,10 @@ Findings are strictly categorized into four engineering priority tiers and forma
 - **Export format:** Create an overlay on the imported drawing to easily locate where each issue appears on the sheet.
 - **Bolted and welded assemblies:** Audit drawings against **ISO 2553:2019** and **AWS A2.4:2007** welding and joint symbol standards.
 - **Expand rulebook:** Extend auditing beyond ISO and ASME GD&T standards by adding a material checker and BOM verification rules for assemblies.
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of recent feature additions and fixes.
 
