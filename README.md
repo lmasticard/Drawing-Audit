@@ -182,3 +182,10 @@ Findings are strictly categorized into four engineering priority tiers and forma
 - **Engineering Sign-Off Required:** Drawing Audit is a pre-release review assistant, not a substitute for formal sign-off by a qualified mechanical or quality engineer. Always verify every finding directly against the drawing and applicable standards before manufacturing release.
 - **Large Multi-Sheet PDFs:** Files larger than 14 MB are automatically rasterized in the browser up to 10 pages (`FALLBACK_MAX_PAGES` in `src/services/drawingAudit.ts`) to stay within request payload limits.
 - **Standard PDFs Excluded:** Copyrighted ASME and ISO standard PDFs are not distributed in this repository (`public/assets/aistudio/*.pdf` is gitignored). The application runs entirely off the structured JSON rulebooks in `src/data/`.
+---
+
+## Next steps
+
+- **Export format:** Create a overlay on the inmported drawing to be able to locate easily where the issues are located.
+- **Bolted and welded assemblies:** Audit drawing on ISO-2553 (2019) & AWS A2.4 (2007) standards
+- **Expand rulebook:** Expand rulebook outside of ISO and ASME standard, add material checker and BOM rules for assemblies.
