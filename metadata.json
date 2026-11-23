@@ -1,0 +1,8 @@
+{
+  "name": "Drawing Audit",
+  "description": "Audit engineering drawings against GD&T logic and standards",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
