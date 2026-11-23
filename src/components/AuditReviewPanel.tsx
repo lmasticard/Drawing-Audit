@@ -68,8 +68,53 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewTab, setViewTab] = useState<ReviewViewTab>('structured');
   const [copied, setCopied] = useState<boolean>(false);
+  const [displayPercent, setDisplayPercent] = useState<number>(0);
   const findingItemRefs = useRef<Record<string, HTMLLIElement | null>>({});
   const pendingScrollIdRef = useRef<string | null>(null);
+  const lastRunStartedAtRef = useRef<number | null>(null);
+
+  const analyzingProgress = auditState.status === 'analyzing' ? auditState.progress : null;
+  const analyzingStartedAt = auditState.status === 'analyzing' ? auditState.startedAt : null;
+
+  // Smoothly advance visual progress strictly within the active sheet's slice while waiting on the auditor
+  useEffect(() => {
+    if (!analyzingProgress || analyzingStartedAt === null) {
+      lastRunStartedAtRef.current = null;
+      setDisplayPercent(0);
+      return;
+    }
+
+    const basePercent = Math.max(0, Math.min(100, analyzingProgress.percent));
+    const isNewRun = lastRunStartedAtRef.current !== analyzingStartedAt;
+    lastRunStartedAtRef.current = analyzingStartedAt;
+
+    setDisplayPercent((prev) => (isNewRun ? basePercent : Math.max(prev, basePercent)));
+
+    if (analyzingProgress.stage !== 'auditing' || basePercent >= 98) {
+      return;
+    }
+
+    const total = Math.max(1, analyzingProgress.totalPages);
+    const activeSheetCeiling =
+      total === 1
+        ? 90
+        : Math.min(96, Math.round((analyzingProgress.currentPage / total) * 100) - 3);
+
+    if (activeSheetCeiling <= basePercent) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setDisplayPercent((prev) => {
+        if (prev >= activeSheetCeiling) return prev;
+        const remaining = activeSheetCeiling - prev;
+        const step = Math.max(0.4, remaining * 0.08);
+        return Math.min(activeSheetCeiling, Number((prev + step).toFixed(1)));
+      });
+    }, 650);
+
+    return () => window.clearInterval(timer);
+  }, [analyzingProgress, analyzingStartedAt]);
 
   const report = auditState.status === 'complete' ? auditState.report : null;
   const activeStandardLabel =
@@ -313,27 +358,104 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
       {/* State 1: Analyzing */}
       {auditState.status === 'analyzing' && (
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="pb-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="w-4 h-4 mt-0.5 border-2 border-slate-300 dark:border-slate-700 border-t-blue-700 dark:border-t-sky-400 rounded-full animate-spin shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Analyzing drawing for manufacturing review
-                </p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Checking GD&amp;T / GPS callouts, datum reference frames, tolerance stackups,
-                  title block completeness, and high-cost machining drivers against{' '}
-                  {activeRuleCount} {activeStandardLabel} rules.
-                </p>
+          <div className="pb-5 border-b border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-4 h-4 mt-0.5 border-2 border-slate-300 dark:border-slate-700 border-t-blue-700 dark:border-t-sky-400 rounded-full animate-spin shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Analyzing drawing for manufacturing review
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Checking GD&amp;T / GPS callouts, datum reference frames, tolerance stackups,
+                    title block completeness, and high-cost machining drivers against{' '}
+                    {activeRuleCount} {activeStandardLabel} rules.
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={onCancelAudit}
+                className="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              >
+                Cancel
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={onCancelAudit}
-              className="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
-            >
-              Cancel
-            </button>
+
+            {/* Drawing Processing Progress Bar */}
+            {analyzingProgress && (
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-medium text-slate-700 dark:text-slate-200 truncate">
+                    {analyzingProgress.statusText}
+                  </span>
+                  <div className="flex items-center gap-1.5 font-mono tabular-nums shrink-0">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {analyzingProgress.processedPages} / {analyzingProgress.totalPages}{' '}
+                      {analyzingProgress.totalPages === 1 ? 'sheet' : 'sheets'}
+                    </span>
+                    <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="font-semibold text-blue-700 dark:text-sky-400">
+                      {Math.round(displayPercent)}%
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  role="progressbar"
+                  aria-label="Drawing analysis progress"
+                  aria-valuenow={Math.round(displayPercent)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuetext={`${analyzingProgress.processedPages} of ${analyzingProgress.totalPages} sheets processed (${Math.round(displayPercent)}%)`}
+                  className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80"
+                >
+                  <div
+                    className="relative h-full rounded-full bg-blue-700 dark:bg-sky-400 transition-[width] duration-300 ease-out overflow-hidden"
+                    style={{ width: `${Math.max(2, Math.min(100, displayPercent))}%` }}
+                  >
+                    {displayPercent < 100 && (
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/25 to-transparent animate-pulse"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Per-sheet visual progress ticks for multi-page engineering drawings */}
+                {analyzingProgress.totalPages > 1 && analyzingProgress.totalPages <= 24 && (
+                  <div
+                    className="flex items-center gap-1 pt-0.5"
+                    aria-label={`Sheet progress: ${analyzingProgress.processedPages} of ${analyzingProgress.totalPages} completed`}
+                  >
+                    {Array.from({ length: analyzingProgress.totalPages }, (_, idx) => {
+                      const sheetNum = idx + 1;
+                      const isDone = sheetNum <= analyzingProgress.processedPages;
+                      const isActive =
+                        sheetNum === analyzingProgress.currentPage && !isDone;
+                      return (
+                        <span
+                          key={sheetNum}
+                          title={`Sheet ${sheetNum}: ${
+                            isDone ? 'Audited' : isActive ? 'Processing' : 'Queued'
+                          }`}
+                          className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                            isDone
+                              ? 'bg-blue-700 dark:bg-sky-400'
+                              : isActive
+                                ? 'bg-blue-400 dark:bg-sky-400/60 animate-pulse'
+                                : 'bg-slate-200 dark:bg-slate-800'
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Geometry-matched Skeleton Rows */}

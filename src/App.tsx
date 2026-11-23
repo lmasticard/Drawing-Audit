@@ -323,6 +323,10 @@ export default function App() {
       standardOverride?: AuditStandard,
     ) => {
       const targetStandard = standardOverride ?? selectedStandard;
+      const initialTotalPages =
+        typeof pageCount === 'number' && Number.isFinite(pageCount) && pageCount > 0
+          ? Math.floor(pageCount)
+          : 1;
       auditAbortRef.current?.abort();
       const controller = new AbortController();
       auditAbortRef.current = controller;
@@ -332,14 +336,33 @@ export default function App() {
         fileName: file.name,
         standard: targetStandard,
         startedAt: Date.now(),
+        progress: {
+          totalPages: initialTotalPages,
+          processedPages: 0,
+          currentPage: 1,
+          percent: initialTotalPages > 1 ? 3 : 10,
+          stage: 'preparing',
+          statusText:
+            initialTotalPages > 1
+              ? `Preparing ${initialTotalPages}-sheet drawing for audit...`
+              : 'Preparing drawing sheet for audit...',
+        },
       });
 
       try {
         const report = await analyzeDrawingPdf(file, {
-          pageCount,
+          pageCount: initialTotalPages,
           standard: targetStandard,
           reasoningDepth: 'deep',
           signal: controller.signal,
+          onProgress: (progress) => {
+            if (activeDocIdRef.current !== docId || controller.signal.aborted) {
+              return;
+            }
+            setAuditState((prev) =>
+              prev.status === 'analyzing' ? { ...prev, progress } : prev,
+            );
+          },
         });
 
         if (activeDocIdRef.current === docId && !controller.signal.aborted) {
@@ -1144,6 +1167,45 @@ export default function App() {
                         )}
                       </div>
                     )}
+                    {/* Design Review Progress Row (when returning to Upload page mid-audit) */}
+                    {auditState.status === 'analyzing' && (
+                      <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-3.5 h-3.5 border-2 border-slate-300 dark:border-slate-700 border-t-blue-700 dark:border-t-sky-400 rounded-full animate-spin shrink-0" />
+                            <span className="font-medium text-slate-800 dark:text-slate-100 truncate">
+                              {auditState.progress.statusText}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-mono tabular-nums shrink-0">
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {auditState.progress.processedPages} / {auditState.progress.totalPages}{' '}
+                              {auditState.progress.totalPages === 1 ? 'sheet' : 'sheets'}
+                            </span>
+                            <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">
+                              ·
+                            </span>
+                            <span className="font-semibold text-blue-700 dark:text-sky-400">
+                              {auditState.progress.percent}%
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          role="progressbar"
+                          aria-label="Drawing analysis progress"
+                          aria-valuenow={auditState.progress.percent}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+                        >
+                          <div
+                            className="h-full rounded-full bg-blue-700 dark:bg-sky-400 transition-[width] duration-300 ease-out"
+                            style={{ width: `${Math.max(2, Math.min(100, auditState.progress.percent))}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Design Review Summary Status Row (when returning to Upload page) */}
                     {auditState.status === 'complete' && (
                       <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">

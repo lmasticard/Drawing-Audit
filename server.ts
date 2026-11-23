@@ -61,6 +61,8 @@ interface AuditFindingPayload {
 interface AuditRequestBody {
   fileName?: string;
   pageCount?: number;
+  sheetNumber?: number;
+  totalPages?: number;
   standard?: string;
   pdfBase64?: string;
   pageImages?: Array<{
@@ -478,6 +480,19 @@ async function startServer() {
         typeof body.pageCount === 'number' && Number.isFinite(body.pageCount) && body.pageCount > 0
           ? Math.floor(body.pageCount)
           : 1;
+      const sheetNumber =
+        typeof body.sheetNumber === 'number' &&
+        Number.isFinite(body.sheetNumber) &&
+        body.sheetNumber >= 1
+          ? Math.floor(body.sheetNumber)
+          : undefined;
+      const totalPages = Math.max(
+        pageCount,
+        sheetNumber ?? 1,
+        typeof body.totalPages === 'number' && Number.isFinite(body.totalPages) && body.totalPages > 0
+          ? Math.floor(body.totalPages)
+          : 1,
+      );
 
       const parts: Array<
         | { inlineData: { mimeType: string; data: string } }
@@ -516,8 +531,12 @@ async function startServer() {
         return;
       }
 
+      const documentScopePrompt = sheetNumber
+        ? `Conduct a formal Senior Mechanical Engineer manufacturing design review of Sheet ${sheetNumber} of ${totalPages} from the engineering drawing file "${fileName}". Set pageNumber to ${sheetNumber} for every finding on this sheet.`
+        : `Conduct a formal Senior Mechanical Engineer manufacturing design review of the attached engineering drawing file "${fileName}" (${totalPages} ${totalPages === 1 ? 'sheet/page' : 'sheets/pages'}).`;
+
       parts.push({
-        text: `Conduct a formal Senior Mechanical Engineer manufacturing design review of the attached engineering drawing file "${fileName}" (${pageCount} ${pageCount === 1 ? 'sheet/page' : 'sheets/pages'}).
+        text: `${documentScopePrompt}
 
 Evaluate all visible views, sections, dimensions, tolerance indicators / feature control frames, datum references, general notes, tolerances, material/finish callouts, and title block information against the ${activeRulebook.standard} rulebook and practical manufacturing / cost-driver best practices.
 
@@ -570,12 +589,13 @@ Return structured JSON containing drawingName, generalAssessment (1-2 sentences)
         .filter((f) => f && typeof f.description === 'string' && f.description.trim().length > 0)
         .map((f, idx) => {
           const priority: AuditPriority = PRIORITY_ORDER.includes(f.priority) ? f.priority : 'P2';
-          const clampedPage =
-            typeof f.pageNumber === 'number' && Number.isFinite(f.pageNumber)
-              ? Math.max(1, Math.min(pageCount, Math.floor(f.pageNumber)))
+          const clampedPage = sheetNumber
+            ? sheetNumber
+            : typeof f.pageNumber === 'number' && Number.isFinite(f.pageNumber)
+              ? Math.max(1, Math.min(totalPages, Math.floor(f.pageNumber)))
               : 1;
           return {
-            id: `finding-${priority.toLowerCase()}-${idx + 1}`,
+            id: `finding-p${clampedPage}-${priority.toLowerCase()}-${idx + 1}`,
             priority,
             pageNumber: clampedPage,
             location:
@@ -615,7 +635,7 @@ Return structured JSON containing drawingName, generalAssessment (1-2 sentences)
         analyzedAt: new Date().toISOString(),
         rulebookVersion: activeRulebook.standard,
         ruleCount: activeRulebook.ruleCount,
-        pageCount,
+        pageCount: totalPages,
         modelUsed: MODEL_NAME,
       });
     } catch (err) {

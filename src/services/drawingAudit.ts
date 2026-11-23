@@ -1,8 +1,32 @@
-import type { AuditStandard, DrawingAuditReport } from '../types/audit';
+import {
+  AUDIT_STANDARDS,
+  PRIORITY_ORDER,
+  formatAuditReportToMarkdown,
+  type AuditFinding,
+  type AuditProgress,
+  type AuditStandard,
+  type DrawingAuditReport,
+} from '../types/audit';
 import { pdfjsLib } from '../utils/pdfHelpers';
 
 const DIRECT_PDF_MAX_BYTES = 14 * 1024 * 1024; // 14 MB direct PDF threshold
-const FALLBACK_MAX_PAGES = 10;
+
+interface AuditRequestPayload {
+  fileName: string;
+  pageCount: number;
+  sheetNumber?: number;
+  totalPages?: number;
+  standard: AuditStandard;
+  pdfBase64?: string;
+  pageImages?: Array<{ pageNumber: number; mimeType: string; data: string }>;
+  reasoningDepth: 'standard' | 'deep';
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new DOMException('Drawing analysis cancelled.', 'AbortError');
+  }
+}
 
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
@@ -16,93 +40,47 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
-async function renderPdfPagesAsImages(
-  file: File,
-  maxPages = FALLBACK_MAX_PAGES,
-): Promise<{ pageCount: number; pageImages: Array<{ pageNumber: number; mimeType: string; data: string }> }> {
-  const buffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
-  const pdf = await loadingTask.promise;
+async function renderLoadedPdfPageAsImage(
+  pdf: Awaited<ReturnType<typeof pdfjsLib.getDocument>['promise']>,
+  pageNumber: number,
+): Promise<{ pageNumber: number; mimeType: string; data: string }> {
+  const page = await pdf.getPage(pageNumber);
+  const baseViewport = page.getViewport({ scale: 1 });
+  const targetWidth = 1800;
+  const scale = Math.min(2.2, Math.max(1, targetWidth / Math.max(baseViewport.width, 1)));
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.floor(viewport.width));
+  canvas.height = Math.max(1, Math.floor(viewport.height));
 
   try {
-    const total = pdf.numPages;
-    const count = Math.min(total, maxPages);
-    const pageImages: Array<{ pageNumber: number; mimeType: string; data: string }> = [];
+    await page.render({ canvas, viewport }).promise;
+    const dataUrl = canvas.toDataURL('image/png');
+    const base64 = dataUrl.split(',')[1] ?? '';
 
-    for (let pageNum = 1; pageNum <= count; pageNum += 1) {
-      const page = await pdf.getPage(pageNum);
-      const baseViewport = page.getViewport({ scale: 1 });
-      const targetWidth = 1800;
-      const scale = Math.min(2.2, Math.max(1, targetWidth / Math.max(baseViewport.width, 1)));
-      const viewport = page.getViewport({ scale });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.floor(viewport.width));
-      canvas.height = Math.max(1, Math.floor(viewport.height));
-
-      await page.render({ canvas, viewport }).promise;
-      const dataUrl = canvas.toDataURL('image/png');
-      const base64 = dataUrl.split(',')[1] ?? '';
-
-      pageImages.push({
-        pageNumber: pageNum,
-        mimeType: 'image/png',
-        data: base64,
-      });
-    }
-
-    return { pageCount: total, pageImages };
+    return {
+      pageNumber,
+      mimeType: 'image/png',
+      data: base64,
+    };
   } finally {
-    await loadingTask.destroy();
+    canvas.width = 0;
+    canvas.height = 0;
   }
 }
 
-export async function analyzeDrawingPdf(
-  file: File,
-  options?: {
-    pageCount?: number;
-    standard?: AuditStandard;
-    reasoningDepth?: 'standard' | 'deep';
-    signal?: AbortSignal;
-  },
+async function postAuditRequest(
+  payload: AuditRequestPayload,
+  signal?: AbortSignal,
 ): Promise<DrawingAuditReport> {
-  const standard: AuditStandard = options?.standard ?? 'ASME Y14.5-2018';
-  let payload: {
-    fileName: string;
-    pageCount: number;
-    standard: AuditStandard;
-    pdfBase64?: string;
-    pageImages?: Array<{ pageNumber: number; mimeType: string; data: string }>;
-    reasoningDepth: 'standard' | 'deep';
-  };
-
-  if (file.size <= DIRECT_PDF_MAX_BYTES) {
-    const pdfBase64 = await fileToBase64(file);
-    payload = {
-      fileName: file.name,
-      pageCount: options?.pageCount && options.pageCount > 0 ? options.pageCount : 1,
-      standard,
-      pdfBase64,
-      reasoningDepth: options?.reasoningDepth ?? 'deep',
-    };
-  } else {
-    const rendered = await renderPdfPagesAsImages(file);
-    payload = {
-      fileName: file.name,
-      pageCount: rendered.pageCount,
-      standard,
-      pageImages: rendered.pageImages,
-      reasoningDepth: options?.reasoningDepth ?? 'deep',
-    };
-  }
-
   const response = await fetch('/api/audit', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
-    signal: options?.signal,
+    signal,
   });
 
   const data = (await response.json().catch(() => ({}))) as Partial<DrawingAuditReport> & {
@@ -120,4 +98,279 @@ export async function analyzeDrawingPdf(
   }
 
   return data as DrawingAuditReport;
+}
+
+function buildMultiPageAssessment(
+  totalPages: number,
+  findings: AuditFinding[],
+  sheetAssessments: string[],
+  standard: AuditStandard,
+): string {
+  const p0 = findings.filter((f) => f.priority === 'P0').length;
+  const p1 = findings.filter((f) => f.priority === 'P1').length;
+  const p2 = findings.filter((f) => f.priority === 'P2').length;
+  const p3 = findings.filter((f) => f.priority === 'P3').length;
+
+  const breakdown: string[] = [];
+  if (p0 > 0) breakdown.push(`${p0} critical (P0)`);
+  if (p1 > 0) breakdown.push(`${p1} major (P1)`);
+  if (p2 > 0) breakdown.push(`${p2} minor (P2)`);
+  if (p3 > 0) breakdown.push(`${p3} suggestion (P3)`);
+
+  const overview =
+    findings.length === 0
+      ? `Completed ${standard} review across all ${totalPages} drawing sheets with no actionable issues identified.`
+      : `Completed ${standard} review across all ${totalPages} drawing sheets, identifying ${findings.length} actionable ${findings.length === 1 ? 'finding' : 'findings'} (${breakdown.join(', ')}).`;
+
+  const leadSummary = sheetAssessments.find((item) => item.trim().length > 0)?.trim();
+  return leadSummary ? `${overview} ${leadSummary}` : overview;
+}
+
+export async function analyzeDrawingPdf(
+  file: File,
+  options?: {
+    pageCount?: number;
+    standard?: AuditStandard;
+    reasoningDepth?: 'standard' | 'deep';
+    signal?: AbortSignal;
+    onProgress?: (progress: AuditProgress) => void;
+  },
+): Promise<DrawingAuditReport> {
+  const standard: AuditStandard = options?.standard ?? 'ASME Y14.5-2018';
+  const reasoningDepth = options?.reasoningDepth ?? 'deep';
+  const signal = options?.signal;
+  const emitProgress = (progress: AuditProgress) => {
+    if (!signal?.aborted) {
+      options?.onProgress?.(progress);
+    }
+  };
+
+  throwIfAborted(signal);
+
+  const knownPageCount =
+    typeof options?.pageCount === 'number' && Number.isFinite(options.pageCount) && options.pageCount > 0
+      ? Math.floor(options.pageCount)
+      : undefined;
+
+  // Fast direct-PDF path for single-page drawings under the size threshold
+  if (knownPageCount === 1 && file.size <= DIRECT_PDF_MAX_BYTES) {
+    emitProgress({
+      totalPages: 1,
+      processedPages: 0,
+      currentPage: 1,
+      percent: 12,
+      stage: 'preparing',
+      statusText: 'Preparing sheet 1 of 1 for audit...',
+    });
+
+    const pdfBase64 = await fileToBase64(file);
+    throwIfAborted(signal);
+
+    emitProgress({
+      totalPages: 1,
+      processedPages: 0,
+      currentPage: 1,
+      percent: 28,
+      stage: 'auditing',
+      statusText: `Auditing sheet 1 of 1 against ${standard}...`,
+    });
+
+    const report = await postAuditRequest(
+      {
+        fileName: file.name,
+        pageCount: 1,
+        standard,
+        pdfBase64,
+        reasoningDepth,
+      },
+      signal,
+    );
+
+    emitProgress({
+      totalPages: 1,
+      processedPages: 1,
+      currentPage: 1,
+      percent: 100,
+      stage: 'finalizing',
+      statusText: 'Completed sheet 1 of 1',
+    });
+
+    return report;
+  }
+
+  // Load PDF once via PDF.js to inspect authoritative page count and render sheets incrementally
+  const buffer = await file.arrayBuffer();
+  throwIfAborted(signal);
+
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+  const pdf = await loadingTask.promise;
+
+  try {
+    const totalPages = Math.max(1, pdf.numPages);
+
+    // If pageCount wasn't pre-supplied and turns out to be a small 1-page PDF, send directly
+    if (totalPages === 1 && file.size <= DIRECT_PDF_MAX_BYTES) {
+      emitProgress({
+        totalPages: 1,
+        processedPages: 0,
+        currentPage: 1,
+        percent: 15,
+        stage: 'preparing',
+        statusText: 'Preparing sheet 1 of 1 for audit...',
+      });
+
+      const pdfBase64 = await fileToBase64(file);
+      throwIfAborted(signal);
+
+      emitProgress({
+        totalPages: 1,
+        processedPages: 0,
+        currentPage: 1,
+        percent: 28,
+        stage: 'auditing',
+        statusText: `Auditing sheet 1 of 1 against ${standard}...`,
+      });
+
+      const report = await postAuditRequest(
+        {
+          fileName: file.name,
+          pageCount: 1,
+          standard,
+          pdfBase64,
+          reasoningDepth,
+        },
+        signal,
+      );
+
+      emitProgress({
+        totalPages: 1,
+        processedPages: 1,
+        currentPage: 1,
+        percent: 100,
+        stage: 'finalizing',
+        statusText: 'Completed sheet 1 of 1',
+      });
+
+      return report;
+    }
+
+    // Single-page large PDF (> 14 MB) or Multi-page engineering drawing:
+    // Process sheet-by-sheet so the progress bar tracks real per-sheet completion
+    const allFindings: AuditFinding[] = [];
+    const sheetAssessments: string[] = [];
+    let resolvedDrawingName = file.name;
+    let modelUsed = 'gemini-4-hydrogen';
+    let ruleCount = AUDIT_STANDARDS[standard].ruleCount;
+    let rulebookVersion: string = standard;
+
+    for (let pageNum = 1; pageNum <= totalPages; pageNum += 1) {
+      throwIfAborted(signal);
+
+      const renderPercent = Math.min(
+        98,
+        Math.max(3, Math.round(((pageNum - 1 + 0.08) / totalPages) * 100)),
+      );
+      emitProgress({
+        totalPages,
+        processedPages: pageNum - 1,
+        currentPage: pageNum,
+        percent: renderPercent,
+        stage: 'rendering',
+        statusText: `Rendering sheet ${pageNum} of ${totalPages}...`,
+      });
+
+      const renderedPage = await renderLoadedPdfPageAsImage(pdf, pageNum);
+      throwIfAborted(signal);
+
+      const auditStartPercent = Math.min(
+        98,
+        Math.max(renderPercent + 1, Math.round(((pageNum - 1 + 0.22) / totalPages) * 100)),
+      );
+      emitProgress({
+        totalPages,
+        processedPages: pageNum - 1,
+        currentPage: pageNum,
+        percent: auditStartPercent,
+        stage: 'auditing',
+        statusText: `Auditing sheet ${pageNum} of ${totalPages} against ${standard}...`,
+      });
+
+      const sheetReport = await postAuditRequest(
+        {
+          fileName: file.name,
+          pageCount: totalPages,
+          sheetNumber: pageNum,
+          totalPages,
+          standard,
+          pageImages: [renderedPage],
+          reasoningDepth,
+        },
+        signal,
+      );
+
+      throwIfAborted(signal);
+
+      if (pageNum === 1 && sheetReport.drawingName.trim()) {
+        resolvedDrawingName = sheetReport.drawingName.trim();
+      }
+      if (sheetReport.generalAssessment.trim()) {
+        sheetAssessments.push(sheetReport.generalAssessment.trim());
+      }
+      modelUsed = sheetReport.modelUsed || modelUsed;
+      ruleCount = sheetReport.ruleCount || ruleCount;
+      rulebookVersion = sheetReport.rulebookVersion || rulebookVersion;
+
+      sheetReport.findings.forEach((finding, idx) => {
+        allFindings.push({
+          ...finding,
+          id: `finding-p${pageNum}-${finding.priority.toLowerCase()}-${idx + 1}`,
+          pageNumber: pageNum,
+        });
+      });
+
+      const completedPercent = Math.round((pageNum / totalPages) * 100);
+      emitProgress({
+        totalPages,
+        processedPages: pageNum,
+        currentPage: pageNum,
+        percent: completedPercent,
+        stage: pageNum < totalPages ? 'auditing' : 'finalizing',
+        statusText:
+          pageNum < totalPages
+            ? `Completed sheet ${pageNum} of ${totalPages}`
+            : `Finalizing ${totalPages}-sheet audit report...`,
+      });
+    }
+
+    const sortedFindings = allFindings.sort((a, b) => {
+      const priorityDelta = PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority);
+      if (priorityDelta !== 0) return priorityDelta;
+      return a.pageNumber - b.pageNumber;
+    });
+
+    const generalAssessment =
+      totalPages === 1 && sheetAssessments[0]
+        ? sheetAssessments[0]
+        : buildMultiPageAssessment(totalPages, sortedFindings, sheetAssessments, standard);
+
+    const markdown = formatAuditReportToMarkdown(
+      resolvedDrawingName,
+      generalAssessment,
+      sortedFindings,
+    );
+
+    return {
+      drawingName: resolvedDrawingName,
+      generalAssessment,
+      findings: sortedFindings,
+      markdown,
+      analyzedAt: new Date().toISOString(),
+      rulebookVersion,
+      ruleCount,
+      pageCount: totalPages,
+      modelUsed,
+    };
+  } finally {
+    await loadingTask.destroy();
+  }
 }

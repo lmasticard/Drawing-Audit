@@ -1,0 +1,79 @@
+================================================================================
+DRAWING AUDIT - CHANGELOG
+================================================================================
+
+All notable changes to Drawing Audit are documented in this file.
+
+--------------------------------------------------------------------------------
+[Unreleased] - 2026-11-23
+--------------------------------------------------------------------------------
+
+Added
+-----
+- Multi-Page Audit Progress Bar:
+  * Added an accessible visual progress bar beneath the drawing analysis status
+    in the Design Review panel displaying the current processing stage,
+    completed sheet counter (X / N sheets), percentage complete, and per-sheet
+    progress segments for multi-page drawings.
+  * Added a matching compact progress bar on the Upload page file summary card
+    when navigating away from the Review workspace while an audit is running.
+  * Updated client-side audit orchestration and POST /api/audit to process
+    multi-page engineering drawing PDFs incrementally sheet-by-sheet with real
+    completion tracking and mid-run cancellation support (AbortController).
+
+- Light Mode / Dark Mode Interface Switch:
+  * Added a horizontal sliding Light / Dark interface switch in the front page
+    header with preference persistence in localStorage.
+  * Added full dark mode styling across the Upload view, split Review
+    workspace, PDF previewer, Design Review panel, Google Sign-In control,
+    Drive Folder modal, and confirmation modals.
+
+- Bottom Page-Selector Navigation Bar for PDF Previewer:
+  * Added a docked navigation bar at the bottom of the PDF previewer with
+    "Previous Page" and "Next Page" buttons, direct numbered sheet buttons
+    (with compact ellipsis handling for larger packets and dot indicators for
+    sheets with findings), and a "Page X of N" selector dropdown.
+
+- Coordinate-Aware P0-P3 Findings Canvas Overlay:
+  * Extended POST /api/audit to return validated normalized bounding boxes
+    (box_2d on a 0-1000 scale) for localized drawing findings.
+  * Implemented a canvas overlay on the PDF previewer that highlights P0-P3
+    findings directly on the drawing with numbered markers (#N), severity color
+    coding, bidirectional hover/selection syncing with the findings list,
+    auto-scroll focus, and a Markers toggle button (M keyboard shortcut).
+
+- GitHub Documentation & Repository Hygiene:
+  * Created README.md with workspace screenshots, end-to-end workflow diagram,
+    ASME Y14.5-2018 / ISO 1101:2017 rulebook breakdown, local setup guide, and
+    roadmap next steps.
+  * Added copyrighted reference standard PDFs under public/assets/aistudio/*.pdf
+    to .gitignore so exports and Git pushes remain clean while preserving full
+    application functionality via the compiled JSON rulebooks.
+
+Fixed
+-----
+- PDF Previewer Viewport Scrolling & Full-Document Zoom:
+  * Fixed horizontal viewport clipping that prevented scrolling to the full
+    left and right edges of wide or zoomed-in engineering drawings in the
+    Review workspace.
+  * Fixed zoom behavior so full drawings can fit completely inside the viewer
+    by adding a "Fit Page" preset (default) alongside "Fit Width", lowering the
+    minimum zoom scale floor to 5%, expanding zoom steps (10%-300%), and
+    accounting for intrinsic PDF page rotation and dimensions per sheet.
+
+--------------------------------------------------------------------------------
+[Initial Release]
+--------------------------------------------------------------------------------
+
+Added
+-----
+- Full-stack Engineering Drawing Audit application (React 19, TypeScript,
+  Vite 8, Tailwind CSS 4, Express, @google/genai).
+- Compiled machine-readable rulebooks for ASME Y14.5-2018 (191 rules) and
+  ISO 1101:2017 (163 rules) with a dual-standard selector on the Upload page.
+- Local PDF.js drawing viewer paired with a P0-P3 Design Review panel featuring
+  severity filters, High Cost Impact filtering, and live keyword search.
+- Client-side archival A4 PDF report export (jsPDF) and Google Docs-ready
+  Markdown copy/download.
+- Optional Google Drive folder sync via Firebase Auth with explicit file
+  overwrite confirmation.

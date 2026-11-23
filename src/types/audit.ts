@@ -60,9 +60,24 @@ export interface DrawingAuditReport {
   modelUsed: string;
 }
 
+export interface AuditProgress {
+  totalPages: number;
+  processedPages: number;
+  currentPage: number;
+  percent: number;
+  stage: 'preparing' | 'rendering' | 'auditing' | 'finalizing';
+  statusText: string;
+}
+
 export type AuditRunState =
   | { status: 'idle' }
-  | { status: 'analyzing'; fileName: string; standard: AuditStandard; startedAt: number }
+  | {
+      status: 'analyzing';
+      fileName: string;
+      standard: AuditStandard;
+      startedAt: number;
+      progress: AuditProgress;
+    }
   | { status: 'complete'; report: DrawingAuditReport }
   | { status: 'error'; message: string };
 
