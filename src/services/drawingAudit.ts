@@ -1,11 +1,13 @@
 import {
   AUDIT_STANDARDS,
   PRIORITY_ORDER,
+  WELDING_STANDARDS,
   formatAuditReportToMarkdown,
   type AuditFinding,
   type AuditProgress,
   type AuditStandard,
   type DrawingAuditReport,
+  type WeldingStandard,
 } from '../types/audit';
 import { pdfjsLib } from '../utils/pdfHelpers';
 
@@ -17,6 +19,9 @@ interface AuditRequestPayload {
   sheetNumber?: number;
   totalPages?: number;
   standard: AuditStandard;
+  isAssembly?: boolean;
+  isWelded?: boolean;
+  weldingStandard?: WeldingStandard | null;
   pdfBase64?: string;
   pageImages?: Array<{ pageNumber: number; mimeType: string; data: string }>;
   reasoningDepth: 'standard' | 'deep';
@@ -104,7 +109,7 @@ function buildMultiPageAssessment(
   totalPages: number,
   findings: AuditFinding[],
   sheetAssessments: string[],
-  standard: AuditStandard,
+  rulebookLabel: string,
 ): string {
   const p0 = findings.filter((f) => f.priority === 'P0').length;
   const p1 = findings.filter((f) => f.priority === 'P1').length;
@@ -119,8 +124,8 @@ function buildMultiPageAssessment(
 
   const overview =
     findings.length === 0
-      ? `Completed ${standard} review across all ${totalPages} drawing sheets with no actionable issues identified.`
-      : `Completed ${standard} review across all ${totalPages} drawing sheets, identifying ${findings.length} actionable ${findings.length === 1 ? 'finding' : 'findings'} (${breakdown.join(', ')}).`;
+      ? `Completed ${rulebookLabel} review across all ${totalPages} drawing sheets with no actionable issues identified.`
+      : `Completed ${rulebookLabel} review across all ${totalPages} drawing sheets, identifying ${findings.length} actionable ${findings.length === 1 ? 'finding' : 'findings'} (${breakdown.join(', ')}).`;
 
   const leadSummary = sheetAssessments.find((item) => item.trim().length > 0)?.trim();
   return leadSummary ? `${overview} ${leadSummary}` : overview;
@@ -131,12 +136,24 @@ export async function analyzeDrawingPdf(
   options?: {
     pageCount?: number;
     standard?: AuditStandard;
+    isAssembly?: boolean;
+    isWelded?: boolean;
+    weldingStandard?: WeldingStandard | null;
     reasoningDepth?: 'standard' | 'deep';
     signal?: AbortSignal;
     onProgress?: (progress: AuditProgress) => void;
   },
 ): Promise<DrawingAuditReport> {
   const standard: AuditStandard = options?.standard ?? 'ASME Y14.5-2018';
+  const isAssembly = Boolean(options?.isAssembly);
+  const isWelded = isAssembly && Boolean(options?.isWelded);
+  const weldingStandard: WeldingStandard | null =
+    isWelded && options?.weldingStandard ? options.weldingStandard : null;
+  const activeScopeLabel = weldingStandard
+    ? `${standard} + ${weldingStandard}`
+    : isAssembly
+      ? `${standard} (Assembly & BOM)`
+      : standard;
   const reasoningDepth = options?.reasoningDepth ?? 'deep';
   const signal = options?.signal;
   const emitProgress = (progress: AuditProgress) => {
@@ -172,7 +189,7 @@ export async function analyzeDrawingPdf(
       currentPage: 1,
       percent: 28,
       stage: 'auditing',
-      statusText: `Auditing sheet 1 of 1 against ${standard}...`,
+      statusText: `Auditing sheet 1 of 1 against ${activeScopeLabel}...`,
     });
 
     const report = await postAuditRequest(
@@ -180,6 +197,9 @@ export async function analyzeDrawingPdf(
         fileName: file.name,
         pageCount: 1,
         standard,
+        isAssembly,
+        isWelded,
+        weldingStandard,
         pdfBase64,
         reasoningDepth,
       },
@@ -228,7 +248,7 @@ export async function analyzeDrawingPdf(
         currentPage: 1,
         percent: 28,
         stage: 'auditing',
-        statusText: `Auditing sheet 1 of 1 against ${standard}...`,
+        statusText: `Auditing sheet 1 of 1 against ${activeScopeLabel}...`,
       });
 
       const report = await postAuditRequest(
@@ -236,6 +256,9 @@ export async function analyzeDrawingPdf(
           fileName: file.name,
           pageCount: 1,
           standard,
+          isAssembly,
+          isWelded,
+          weldingStandard,
           pdfBase64,
           reasoningDepth,
         },
@@ -260,8 +283,12 @@ export async function analyzeDrawingPdf(
     const sheetAssessments: string[] = [];
     let resolvedDrawingName = file.name;
     let modelUsed = 'gemini-4-hydrogen';
-    let ruleCount = AUDIT_STANDARDS[standard].ruleCount;
-    let rulebookVersion: string = standard;
+    let ruleCount =
+      AUDIT_STANDARDS[standard].ruleCount +
+      (weldingStandard ? WELDING_STANDARDS[weldingStandard].ruleCount : 0);
+    let rulebookVersion: string = weldingStandard
+      ? `${standard} + ${weldingStandard}`
+      : standard;
 
     for (let pageNum = 1; pageNum <= totalPages; pageNum += 1) {
       throwIfAborted(signal);
@@ -292,7 +319,7 @@ export async function analyzeDrawingPdf(
         currentPage: pageNum,
         percent: auditStartPercent,
         stage: 'auditing',
-        statusText: `Auditing sheet ${pageNum} of ${totalPages} against ${standard}...`,
+        statusText: `Auditing sheet ${pageNum} of ${totalPages} against ${activeScopeLabel}...`,
       });
 
       const sheetReport = await postAuditRequest(
@@ -302,6 +329,9 @@ export async function analyzeDrawingPdf(
           sheetNumber: pageNum,
           totalPages,
           standard,
+          isAssembly,
+          isWelded,
+          weldingStandard,
           pageImages: [renderedPage],
           reasoningDepth,
         },
@@ -351,12 +381,13 @@ export async function analyzeDrawingPdf(
     const generalAssessment =
       totalPages === 1 && sheetAssessments[0]
         ? sheetAssessments[0]
-        : buildMultiPageAssessment(totalPages, sortedFindings, sheetAssessments, standard);
+        : buildMultiPageAssessment(totalPages, sortedFindings, sheetAssessments, rulebookVersion);
 
     const markdown = formatAuditReportToMarkdown(
       resolvedDrawingName,
       generalAssessment,
       sortedFindings,
+      { isWelded, weldingStandard },
     );
 
     return {
@@ -369,6 +400,9 @@ export async function analyzeDrawingPdf(
       ruleCount,
       pageCount: totalPages,
       modelUsed,
+      isAssembly,
+      isWelded,
+      weldingStandard,
     };
   } finally {
     await loadingTask.destroy();

@@ -14,6 +14,8 @@ import {
   AUDIT_STANDARDS,
   PRIORITY_META,
   PRIORITY_ORDER,
+  WELDING_STANDARDS,
+  isWeldingFinding,
   type AuditFinding,
   type AuditPriority,
   type AuditRunState,
@@ -117,14 +119,34 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
   }, [analyzingProgress, analyzingStartedAt]);
 
   const report = auditState.status === 'complete' ? auditState.report : null;
-  const activeStandardLabel =
-    report?.rulebookVersion ??
-    (auditState.status === 'analyzing' ? auditState.standard : selectedStandard);
-  const activeRuleCount =
-    report?.ruleCount ??
-    AUDIT_STANDARDS[
-      auditState.status === 'analyzing' ? auditState.standard : selectedStandard
-    ].ruleCount;
+  const activeStandardLabel = useMemo(() => {
+    if (report) return report.rulebookVersion;
+    if (auditState.status === 'analyzing') {
+      if (auditState.isAssembly && auditState.isWelded && auditState.weldingStandard) {
+        return `${auditState.standard} + ${auditState.weldingStandard}`;
+      }
+      if (auditState.isAssembly) {
+        return `${auditState.standard} (Assembly)`;
+      }
+      return auditState.standard;
+    }
+    return selectedStandard;
+  }, [report, auditState, selectedStandard]);
+
+  const activeRuleCount = useMemo(() => {
+    if (report) return report.ruleCount;
+    const baseStandard = auditState.status === 'analyzing' ? auditState.standard : selectedStandard;
+    const baseCount = AUDIT_STANDARDS[baseStandard].ruleCount;
+    if (
+      auditState.status === 'analyzing' &&
+      auditState.isAssembly &&
+      auditState.isWelded &&
+      auditState.weldingStandard
+    ) {
+      return baseCount + WELDING_STANDARDS[auditState.weldingStandard].ruleCount;
+    }
+    return baseCount;
+  }, [report, auditState, selectedStandard]);
 
   const counts = useMemo(() => {
     const base = { ALL: 0, P0: 0, P1: 0, P2: 0, P3: 0, COST: 0 };
@@ -164,15 +186,41 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
     return map;
   }, [report]);
 
-  const groupedByPriority = useMemo(() => {
+  const showWeldingSection = useMemo(() => {
+    if (!report) return false;
+    return (
+      Boolean(report.isWelded && report.weldingStandard) ||
+      report.findings.some((f) => isWeldingFinding(f))
+    );
+  }, [report]);
+
+  const { gdtFindings, weldingFindings } = useMemo(() => {
+    if (!showWeldingSection) {
+      return { gdtFindings: filteredFindings, weldingFindings: [] as AuditFinding[] };
+    }
+    const gdt: AuditFinding[] = [];
+    const welding: AuditFinding[] = [];
+    for (const f of filteredFindings) {
+      if (isWeldingFinding(f)) {
+        welding.push(f);
+      } else {
+        gdt.push(f);
+      }
+    }
+    return { gdtFindings: gdt, weldingFindings: welding };
+  }, [filteredFindings, showWeldingSection]);
+
+  const buildPriorityGroups = (items: AuditFinding[]) => {
     const groups: Array<{ priority: AuditPriority; items: AuditFinding[] }> = [];
     for (const priority of PRIORITY_ORDER) {
       if (priorityFilter !== 'ALL' && priorityFilter !== priority) continue;
-      const items = filteredFindings.filter((f) => f.priority === priority);
-      groups.push({ priority, items });
+      groups.push({
+        priority,
+        items: items.filter((f) => f.priority === priority),
+      });
     }
     return groups;
-  }, [filteredFindings, priorityFilter]);
+  };
 
   // When a marker is clicked on the PDF canvas, reveal its card if hidden by filters/tab
   useEffect(() => {
@@ -367,9 +415,11 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                     Analyzing drawing for manufacturing review
                   </p>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Checking GD&amp;T / GPS callouts, datum reference frames, tolerance stackups,
-                    title block completeness, and high-cost machining drivers against{' '}
-                    {activeRuleCount} {activeStandardLabel} rules.
+                    {auditState.isAssembly && auditState.isWelded && auditState.weldingStandard
+                      ? `Checking GD&T / GPS callouts, BOM-to-balloon quantities, welding symbols (${auditState.weldingStandard}), title block completeness, and high-cost machining drivers against ${activeRuleCount} ${activeStandardLabel} rules.`
+                      : auditState.isAssembly
+                        ? `Checking GD&T / GPS callouts, BOM vs. balloon quantities across views, mating interfaces, title block completeness, and high-cost machining drivers against ${activeRuleCount} ${activeStandardLabel} rules.`
+                        : `Checking GD&T / GPS callouts, datum reference frames, tolerance stackups, title block completeness, and high-cost machining drivers against ${activeRuleCount} ${activeStandardLabel} rules.`}
                   </p>
                 </div>
               </div>
@@ -661,163 +711,225 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {groupedByPriority.map(({ priority, items }) => {
-                      const meta = PRIORITY_META[priority];
+                  (() => {
+                    const renderPriorityList = (sectionItems: AuditFinding[], keyPrefix: string) => {
+                      const groups = buildPriorityGroups(sectionItems);
                       return (
-                        <section key={priority} aria-label={meta.headingLabel}>
-                          {/* Priority Group Header */}
-                          <div
-                            className={`sticky top-0 z-10 px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 backdrop-blur-xs ${PRIORITY_HEADER_BG[priority]}`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className={`text-xs font-bold font-mono ${PRIORITY_TEXT_STYLE[priority]}`}
+                        <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                          {groups.map(({ priority, items }) => {
+                            const meta = PRIORITY_META[priority];
+                            return (
+                              <section
+                                key={`${keyPrefix}-${priority}`}
+                                aria-label={`${keyPrefix} ${meta.headingLabel}`}
                               >
-                                {priority}
-                              </span>
-                              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                {meta.headingLabel.replace(`${priority} `, '').replace(/^\(|\)$/g, '')}
-                              </span>
+                                {/* Priority Group Header */}
+                                <div
+                                  className={`sticky top-0 z-10 px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 backdrop-blur-xs ${PRIORITY_HEADER_BG[priority]}`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span
+                                      className={`text-xs font-bold font-mono ${PRIORITY_TEXT_STYLE[priority]}`}
+                                    >
+                                      {priority}
+                                    </span>
+                                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                      {meta.headingLabel
+                                        .replace(`${priority} `, '')
+                                        .replace(/^\(|\)$/g, '')}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
+                                    {items.length}
+                                  </span>
+                                </div>
+
+                                {items.length === 0 ? (
+                                  <div className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
+                                    No {meta.headingLabel} issues identified.
+                                  </div>
+                                ) : (
+                                  <ul className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                                    {items.map((finding) => {
+                                      const isSelected = finding.id === activeFindingId;
+                                      const isHovered = finding.id === hoveredFindingId;
+                                      const findingNum = findingNumberMap.get(finding.id);
+                                      return (
+                                        <li
+                                          key={finding.id}
+                                          ref={(el) => {
+                                            findingItemRefs.current[finding.id] = el;
+                                          }}
+                                        >
+                                          <button
+                                            type="button"
+                                            onClick={() => onSelectFinding(finding)}
+                                            onMouseEnter={() => onHoverFinding?.(finding.id)}
+                                            onMouseLeave={() => onHoverFinding?.(null)}
+                                            className={`w-full text-left px-6 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 ${
+                                              isSelected
+                                                ? 'bg-blue-50/70 dark:bg-sky-950/50 ring-1 ring-inset ring-blue-200 dark:ring-sky-700'
+                                                : isHovered
+                                                  ? 'bg-slate-50 dark:bg-slate-800/70'
+                                                  : 'hover:bg-slate-50/90 dark:hover:bg-slate-800/60'
+                                            }`}
+                                          >
+                                            {/* Unboxed Metadata Row (Zero-Pill Discipline) */}
+                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                                              <span
+                                                className={`font-mono font-semibold ${PRIORITY_TEXT_STYLE[finding.priority]}`}
+                                              >
+                                                {finding.priority}
+                                                {findingNum !== undefined ? ` #${findingNum}` : ''}
+                                              </span>
+                                              <span
+                                                className="text-slate-300 dark:text-slate-600"
+                                                aria-hidden="true"
+                                              >
+                                                ·
+                                              </span>
+                                              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                                {finding.location}
+                                              </span>
+                                              {report.pageCount > 1 && (
+                                                <>
+                                                  <span
+                                                    className="text-slate-300 dark:text-slate-600"
+                                                    aria-hidden="true"
+                                                  >
+                                                    ·
+                                                  </span>
+                                                  <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                                                    Sheet {finding.pageNumber}
+                                                  </span>
+                                                </>
+                                              )}
+                                              {finding.asmeCitation && (
+                                                <>
+                                                  <span
+                                                    className="text-slate-300 dark:text-slate-600"
+                                                    aria-hidden="true"
+                                                  >
+                                                    ·
+                                                  </span>
+                                                  <span className="font-mono text-blue-700 dark:text-sky-400">
+                                                    {finding.asmeCitation}
+                                                  </span>
+                                                </>
+                                              )}
+                                              {finding.boundingBox && (
+                                                <>
+                                                  <span
+                                                    className="text-slate-300 dark:text-slate-600"
+                                                    aria-hidden="true"
+                                                  >
+                                                    ·
+                                                  </span>
+                                                  <span
+                                                    className="inline-flex items-center gap-1 font-mono text-slate-500 dark:text-slate-400"
+                                                    title="Located on drawing overlay"
+                                                  >
+                                                    <Crosshair className="w-3 h-3 text-blue-600 dark:text-sky-400" />
+                                                    <span>Pinned</span>
+                                                  </span>
+                                                </>
+                                              )}
+                                              {finding.costImpact && (
+                                                <>
+                                                  <span
+                                                    className="text-slate-300 dark:text-slate-600"
+                                                    aria-hidden="true"
+                                                  >
+                                                    ·
+                                                  </span>
+                                                  <span className="font-medium text-amber-800 dark:text-amber-400">
+                                                    High cost impact
+                                                  </span>
+                                                </>
+                                              )}
+                                            </div>
+
+                                            {/* Issue -> Impact -> Recommended Fix */}
+                                            <div className="mt-2 space-y-1.5 text-[13px] leading-relaxed">
+                                              <p className="text-slate-900 dark:text-slate-100">
+                                                {finding.description}
+                                              </p>
+                                              <p className="text-slate-600 dark:text-slate-400">
+                                                <span className="font-medium text-slate-700 dark:text-slate-300">
+                                                  Impact:{' '}
+                                                </span>
+                                                {finding.impact}
+                                              </p>
+                                              <p className="text-slate-700 dark:text-slate-300">
+                                                <span className="font-medium text-slate-900 dark:text-slate-100">
+                                                  Recommended fix:{' '}
+                                                </span>
+                                                {finding.recommendedFix}
+                                              </p>
+                                            </div>
+                                          </button>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                              </section>
+                            );
+                          })}
+                        </div>
+                      );
+                    };
+
+                    if (!showWeldingSection) {
+                      return renderPriorityList(filteredFindings, 'all');
+                    }
+
+                    const baseStandardTitle = report.rulebookVersion.split(' + ')[0] || selectedStandard;
+
+                    return (
+                      <div>
+                        {/* Section 1: Base GD&T & Assembly Audit */}
+                        <div className="px-6 py-3 bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                              GD&amp;T &amp; Assembly Audit
+                            </h3>
+                            <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                              {baseStandardTitle} · BOM &amp; balloon parity
+                            </p>
+                          </div>
+                          <span className="text-xs font-mono tabular-nums font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                            {gdtFindings.length} {gdtFindings.length === 1 ? 'finding' : 'findings'}
+                          </span>
+                        </div>
+                        {renderPriorityList(gdtFindings, 'gdt')}
+
+                        {/* Section 2: Welding standard Audit */}
+                        <section
+                          aria-label="Welding standard Audit"
+                          className="border-t-2 border-slate-300 dark:border-slate-700"
+                        >
+                          <div className="px-6 py-3 bg-blue-50/70 dark:bg-sky-950/50 border-b border-blue-200/80 dark:border-sky-800/70 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-50">
+                                Welding standard Audit
+                              </h3>
+                              {report.weldingStandard && (
+                                <p className="text-[11px] font-mono text-blue-700 dark:text-sky-400 mt-0.5 truncate">
+                                  {report.weldingStandard}
+                                </p>
+                              )}
                             </div>
-                            <span className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
-                              {items.length}
+                            <span className="text-xs font-mono tabular-nums font-semibold text-blue-800 dark:text-sky-300 shrink-0">
+                              {weldingFindings.length}{' '}
+                              {weldingFindings.length === 1 ? 'finding' : 'findings'}
                             </span>
                           </div>
-
-                          {items.length === 0 ? (
-                            <div className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
-                              No {meta.headingLabel} issues identified.
-                            </div>
-                          ) : (
-                            <ul className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                              {items.map((finding) => {
-                                const isSelected = finding.id === activeFindingId;
-                                const isHovered = finding.id === hoveredFindingId;
-                                const findingNum = findingNumberMap.get(finding.id);
-                                return (
-                                  <li
-                                    key={finding.id}
-                                    ref={(el) => {
-                                      findingItemRefs.current[finding.id] = el;
-                                    }}
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => onSelectFinding(finding)}
-                                      onMouseEnter={() => onHoverFinding?.(finding.id)}
-                                      onMouseLeave={() => onHoverFinding?.(null)}
-                                      className={`w-full text-left px-6 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 ${
-                                        isSelected
-                                          ? 'bg-blue-50/70 dark:bg-sky-950/50 ring-1 ring-inset ring-blue-200 dark:ring-sky-700'
-                                          : isHovered
-                                            ? 'bg-slate-50 dark:bg-slate-800/70'
-                                            : 'hover:bg-slate-50/90 dark:hover:bg-slate-800/60'
-                                      }`}
-                                    >
-                                      {/* Unboxed Metadata Row (Zero-Pill Discipline) */}
-                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-                                        <span
-                                          className={`font-mono font-semibold ${PRIORITY_TEXT_STYLE[finding.priority]}`}
-                                        >
-                                          {finding.priority}
-                                          {findingNum !== undefined ? ` #${findingNum}` : ''}
-                                        </span>
-                                        <span
-                                          className="text-slate-300 dark:text-slate-600"
-                                          aria-hidden="true"
-                                        >
-                                          ·
-                                        </span>
-                                        <span className="font-semibold text-slate-900 dark:text-slate-100">
-                                          {finding.location}
-                                        </span>
-                                        {report.pageCount > 1 && (
-                                          <>
-                                            <span
-                                              className="text-slate-300 dark:text-slate-600"
-                                              aria-hidden="true"
-                                            >
-                                              ·
-                                            </span>
-                                            <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
-                                              Sheet {finding.pageNumber}
-                                            </span>
-                                          </>
-                                        )}
-                                        {finding.asmeCitation && (
-                                          <>
-                                            <span
-                                              className="text-slate-300 dark:text-slate-600"
-                                              aria-hidden="true"
-                                            >
-                                              ·
-                                            </span>
-                                            <span className="font-mono text-blue-700 dark:text-sky-400">
-                                              {finding.asmeCitation}
-                                            </span>
-                                          </>
-                                        )}
-                                        {finding.boundingBox && (
-                                          <>
-                                            <span
-                                              className="text-slate-300 dark:text-slate-600"
-                                              aria-hidden="true"
-                                            >
-                                              ·
-                                            </span>
-                                            <span
-                                              className="inline-flex items-center gap-1 font-mono text-slate-500 dark:text-slate-400"
-                                              title="Located on drawing overlay"
-                                            >
-                                              <Crosshair className="w-3 h-3 text-blue-600 dark:text-sky-400" />
-                                              <span>Pinned</span>
-                                            </span>
-                                          </>
-                                        )}
-                                        {finding.costImpact && (
-                                          <>
-                                            <span
-                                              className="text-slate-300 dark:text-slate-600"
-                                              aria-hidden="true"
-                                            >
-                                              ·
-                                            </span>
-                                            <span className="font-medium text-amber-800 dark:text-amber-400">
-                                              High cost impact
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-
-                                      {/* Issue -> Impact -> Recommended Fix */}
-                                      <div className="mt-2 space-y-1.5 text-[13px] leading-relaxed">
-                                        <p className="text-slate-900 dark:text-slate-100">
-                                          {finding.description}
-                                        </p>
-                                        <p className="text-slate-600 dark:text-slate-400">
-                                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                                            Impact:{' '}
-                                          </span>
-                                          {finding.impact}
-                                        </p>
-                                        <p className="text-slate-700 dark:text-slate-300">
-                                          <span className="font-medium text-slate-900 dark:text-slate-100">
-                                            Recommended fix:{' '}
-                                          </span>
-                                          {finding.recommendedFix}
-                                        </p>
-                                      </div>
-                                    </button>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
+                          {renderPriorityList(weldingFindings, 'welding')}
                         </section>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })()
                 )}
               </div>
             </>

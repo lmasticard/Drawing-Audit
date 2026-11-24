@@ -44,8 +44,11 @@ import {
 import {
   AUDIT_STANDARDS,
   AUDIT_STANDARD_OPTIONS,
+  WELDING_STANDARDS,
+  WELDING_STANDARD_OPTIONS,
   type AuditRunState,
   type AuditStandard,
+  type WeldingStandard,
 } from './types/audit';
 import {
   createSamplePdfFile,
@@ -64,6 +67,9 @@ type UploadState =
 
 const LINKED_FOLDER_STORAGE_KEY = 'folio_linked_drive_folder_v2';
 const AUDIT_STANDARD_STORAGE_KEY = 'drawing_audit_standard_v1';
+const ASSEMBLY_MODE_STORAGE_KEY = 'drawing_audit_is_assembly_v1';
+const WELDED_ASSEMBLY_STORAGE_KEY = 'drawing_audit_is_welded_v1';
+const WELDING_STANDARD_STORAGE_KEY = 'drawing_audit_welding_standard_v1';
 const THEME_STORAGE_KEY = 'drawing_audit_theme_v1';
 
 type InterfaceTheme = 'light' | 'dark';
@@ -90,6 +96,32 @@ function loadSavedStandard(): AuditStandard {
     // Ignore storage read errors
   }
   return 'ASME Y14.5-2018';
+}
+
+function loadSavedAssemblyConfig(): {
+  isAssembly: boolean;
+  isWelded: boolean;
+  weldingStandard: WeldingStandard | null;
+} {
+  try {
+    const isAssembly = window.localStorage.getItem(ASSEMBLY_MODE_STORAGE_KEY) === 'true';
+    if (!isAssembly) {
+      return { isAssembly: false, isWelded: false, weldingStandard: null };
+    }
+    const isWelded = window.localStorage.getItem(WELDED_ASSEMBLY_STORAGE_KEY) === 'true';
+    if (!isWelded) {
+      return { isAssembly: true, isWelded: false, weldingStandard: null };
+    }
+    const rawWeld = window.localStorage.getItem(WELDING_STANDARD_STORAGE_KEY);
+    const weldingStandard: WeldingStandard =
+      rawWeld === 'ISO 2553:2019' || rawWeld === 'AWS A2.4:2007'
+        ? rawWeld
+        : 'AWS A2.4:2007';
+    return { isAssembly: true, isWelded: true, weldingStandard };
+  } catch {
+    // Ignore storage read errors
+  }
+  return { isAssembly: false, isWelded: false, weldingStandard: null };
 }
 
 const DEFAULT_DRIVE_FOLDER: DriveFolder = {
@@ -129,6 +161,12 @@ export default function App() {
   const [theme, setTheme] = useState<InterfaceTheme>(() => loadSavedTheme());
   const [selectedStandard, setSelectedStandard] = useState<AuditStandard>(() =>
     loadSavedStandard(),
+  );
+  const [initialAssemblyConfig] = useState(() => loadSavedAssemblyConfig());
+  const [isAssembly, setIsAssembly] = useState<boolean>(initialAssemblyConfig.isAssembly);
+  const [isWelded, setIsWelded] = useState<boolean>(initialAssemblyConfig.isWelded);
+  const [weldingStandard, setWeldingStandard] = useState<WeldingStandard | null>(
+    initialAssemblyConfig.weldingStandard,
   );
   const [auditState, setAuditState] = useState<AuditRunState>({ status: 'idle' });
 
@@ -199,6 +237,45 @@ export default function App() {
       // Ignore storage write errors
     }
   }, [selectedStandard]);
+
+  // Persist assembly / welded / welding-standard workflow state
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ASSEMBLY_MODE_STORAGE_KEY, String(isAssembly));
+      window.localStorage.setItem(WELDED_ASSEMBLY_STORAGE_KEY, String(isAssembly && isWelded));
+      if (isAssembly && isWelded && weldingStandard) {
+        window.localStorage.setItem(WELDING_STANDARD_STORAGE_KEY, weldingStandard);
+      } else {
+        window.localStorage.removeItem(WELDING_STANDARD_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage write errors
+    }
+  }, [isAssembly, isWelded, weldingStandard]);
+
+  // Step 1 handler: setting Assembly = No automatically resets & hides Steps 2 and 3
+  const handleSetIsAssembly = useCallback((value: boolean) => {
+    setIsAssembly(value);
+    if (!value) {
+      setIsWelded(false);
+      setWeldingStandard(null);
+    }
+  }, []);
+
+  // Step 2 handler: setting Welded = No automatically resets & hides Step 3
+  const handleSetIsWelded = useCallback(
+    (value: boolean) => {
+      setIsWelded(value);
+      if (!value) {
+        setWeldingStandard(null);
+      } else {
+        setWeldingStandard(
+          (prev) => prev ?? (selectedStandard === 'ISO 1101:2017' ? 'ISO 2553:2019' : 'AWS A2.4:2007'),
+        );
+      }
+    },
+    [selectedStandard],
+  );
 
   // Persist non-sensitive linked folder metadata (never tokens)
   useEffect(() => {
@@ -320,9 +397,20 @@ export default function App() {
       file: File,
       docId: string,
       pageCount?: number,
-      standardOverride?: AuditStandard,
+      overrides?: {
+        standard?: AuditStandard;
+        isAssembly?: boolean;
+        isWelded?: boolean;
+        weldingStandard?: WeldingStandard | null;
+      },
     ) => {
-      const targetStandard = standardOverride ?? selectedStandard;
+      const targetStandard = overrides?.standard ?? selectedStandard;
+      const targetIsAssembly = overrides?.isAssembly ?? isAssembly;
+      const targetIsWelded = targetIsAssembly && (overrides?.isWelded ?? isWelded);
+      const targetWeldingStandard: WeldingStandard | null = targetIsWelded
+        ? (overrides?.weldingStandard !== undefined ? overrides.weldingStandard : weldingStandard) ??
+          (targetStandard === 'ISO 1101:2017' ? 'ISO 2553:2019' : 'AWS A2.4:2007')
+        : null;
       const initialTotalPages =
         typeof pageCount === 'number' && Number.isFinite(pageCount) && pageCount > 0
           ? Math.floor(pageCount)
@@ -335,6 +423,9 @@ export default function App() {
         status: 'analyzing',
         fileName: file.name,
         standard: targetStandard,
+        isAssembly: targetIsAssembly,
+        isWelded: targetIsWelded,
+        weldingStandard: targetWeldingStandard,
         startedAt: Date.now(),
         progress: {
           totalPages: initialTotalPages,
@@ -353,6 +444,9 @@ export default function App() {
         const report = await analyzeDrawingPdf(file, {
           pageCount: initialTotalPages,
           standard: targetStandard,
+          isAssembly: targetIsAssembly,
+          isWelded: targetIsWelded,
+          weldingStandard: targetWeldingStandard,
           reasoningDepth: 'deep',
           signal: controller.signal,
           onProgress: (progress) => {
@@ -381,7 +475,7 @@ export default function App() {
         });
       }
     },
-    [selectedStandard],
+    [selectedStandard, isAssembly, isWelded, weldingStandard],
   );
 
   const handleCancelAudit = useCallback(() => {
@@ -690,12 +784,12 @@ export default function App() {
           auditState={auditState}
           onRunAudit={() => {
             if (selectedFile && activeDocIdRef.current) {
-              void runDrawingAudit(
-                selectedFile,
-                activeDocIdRef.current,
-                inspection?.pageCount,
-                selectedStandard,
-              );
+              void runDrawingAudit(selectedFile, activeDocIdRef.current, inspection?.pageCount, {
+                standard: selectedStandard,
+                isAssembly,
+                isWelded,
+                weldingStandard,
+              });
             }
           }}
           onCancelAudit={handleCancelAudit}
@@ -908,6 +1002,198 @@ export default function App() {
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Cascading Assembly & Welding Audit Configuration */}
+                <div className="mb-6 pb-5 border-b border-slate-200 dark:border-slate-800 space-y-4">
+                  {/* Step 1 — Assembly Check (Always Visible) */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                          Step 1
+                        </span>
+                        <span
+                          id="assembly-drawing-label"
+                          className="text-sm font-semibold text-slate-900 dark:text-slate-100"
+                        >
+                          Assembly Check
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Does the uploaded drawing represent an assembly?
+                      </p>
+                    </div>
+
+                    <div
+                      role="radiogroup"
+                      aria-labelledby="assembly-drawing-label"
+                      className="relative grid grid-cols-2 w-full sm:w-[164px] shrink-0 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg select-none"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-slate-900 dark:bg-sky-500 shadow-xs transition-transform duration-200 ease-out ${
+                          isAssembly ? 'translate-x-0' : 'translate-x-full'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={isAssembly}
+                        onClick={() => handleSetIsAssembly(true)}
+                        className={`relative z-10 px-3 py-2 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
+                          isAssembly
+                            ? 'text-white dark:text-slate-950'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                        }`}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={!isAssembly}
+                        onClick={() => handleSetIsAssembly(false)}
+                        className={`relative z-10 px-3 py-2 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
+                          !isAssembly
+                            ? 'text-white dark:text-slate-950'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                        }`}
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Step 2 — Welded Assembly Check (Visible ONLY IF Assembly == Yes) */}
+                  {isAssembly && (
+                    <div className="pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-4 pt-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-mono font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                              Step 2
+                            </span>
+                            <span
+                              id="welded-assembly-label"
+                              className="text-sm font-semibold text-slate-900 dark:text-slate-100"
+                            >
+                              Welded Assembly Check
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Is the assembly welded?
+                          </p>
+                          {!isWelded && (
+                            <p className="text-xs text-blue-700 dark:text-sky-400 mt-1 font-mono">
+                              Active: {selectedStandard} + BOM vs. balloon quantity check
+                            </p>
+                          )}
+                        </div>
+
+                        <div
+                          role="radiogroup"
+                          aria-labelledby="welded-assembly-label"
+                          className="relative grid grid-cols-2 w-full sm:w-[164px] shrink-0 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg select-none"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-slate-900 dark:bg-sky-500 shadow-xs transition-transform duration-200 ease-out ${
+                              isWelded ? 'translate-x-0' : 'translate-x-full'
+                            }`}
+                          />
+                          <button
+                            type="button"
+                            role="radio"
+                            aria-checked={isWelded}
+                            onClick={() => handleSetIsWelded(true)}
+                            className={`relative z-10 px-3 py-2 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
+                              isWelded
+                                ? 'text-white dark:text-slate-950'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                            }`}
+                          >
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            role="radio"
+                            aria-checked={!isWelded}
+                            onClick={() => handleSetIsWelded(false)}
+                            className={`relative z-10 px-3 py-2 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
+                              !isWelded
+                                ? 'text-white dark:text-slate-950'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                            }`}
+                          >
+                            No
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Step 3 — Welding Standard Check (Visible ONLY IF Assembly == Yes AND Welded == Yes) */}
+                      {isWelded && weldingStandard && (
+                        <div className="pl-4 border-l-2 border-blue-200 dark:border-sky-800/80 pt-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono font-semibold uppercase tracking-wide text-blue-700 dark:text-sky-400">
+                                  Step 3
+                                </span>
+                                <span
+                                  id="welding-standard-label"
+                                  className="text-sm font-semibold text-slate-900 dark:text-slate-100"
+                                >
+                                  Welding Standard Check
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Does the drawing use AWS or ISO welding representation?
+                              </p>
+                              <p className="text-xs text-blue-700 dark:text-sky-400 mt-1 font-mono tabular-nums">
+                                + {WELDING_STANDARDS[weldingStandard].ruleCount} rules ·{' '}
+                                {WELDING_STANDARDS[weldingStandard].rulebookFile}
+                              </p>
+                            </div>
+
+                            <div
+                              role="radiogroup"
+                              aria-labelledby="welding-standard-label"
+                              className="relative grid grid-cols-2 w-full sm:w-[300px] shrink-0 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg select-none"
+                            >
+                              <span
+                                aria-hidden="true"
+                                className={`pointer-events-none absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-md bg-slate-900 dark:bg-sky-500 shadow-xs transition-transform duration-200 ease-out ${
+                                  weldingStandard === 'ISO 2553:2019'
+                                    ? 'translate-x-full'
+                                    : 'translate-x-0'
+                                }`}
+                              />
+                              {WELDING_STANDARD_OPTIONS.map((std) => {
+                                const isSelected = weldingStandard === std;
+                                return (
+                                  <button
+                                    key={std}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={isSelected}
+                                    onClick={() => setWeldingStandard(std)}
+                                    className={`relative z-10 px-3 py-2 text-xs font-semibold rounded-md transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1 ${
+                                      isSelected
+                                        ? 'text-white dark:text-slate-950'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                    }`}
+                                  >
+                                    {std}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Inline Error Message (Non-Hue-Only State Signaling) */}
@@ -1231,25 +1517,41 @@ export default function App() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          {auditState.report.rulebookVersion !== selectedStandard && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (selectedFile && activeDocIdRef.current) {
-                                  setIsPreviewOpen(true);
-                                  void runDrawingAudit(
-                                    selectedFile,
-                                    activeDocIdRef.current,
-                                    inspection?.pageCount,
-                                    selectedStandard,
-                                  );
-                                }
-                              }}
-                              className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline underline-offset-2 whitespace-nowrap"
-                            >
-                              Re-run with {selectedStandard}
-                            </button>
-                          )}
+                          {(() => {
+                            const expectedVersion =
+                              isAssembly && isWelded && weldingStandard
+                                ? `${selectedStandard} + ${weldingStandard}`
+                                : isAssembly
+                                  ? `${selectedStandard} (Assembly)`
+                                  : selectedStandard;
+                            if (auditState.report.rulebookVersion === expectedVersion) {
+                              return null;
+                            }
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (selectedFile && activeDocIdRef.current) {
+                                    setIsPreviewOpen(true);
+                                    void runDrawingAudit(
+                                      selectedFile,
+                                      activeDocIdRef.current,
+                                      inspection?.pageCount,
+                                      {
+                                        standard: selectedStandard,
+                                        isAssembly,
+                                        isWelded,
+                                        weldingStandard,
+                                      },
+                                    );
+                                  }
+                                }}
+                                className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline underline-offset-2 whitespace-nowrap"
+                              >
+                                Re-run with {expectedVersion}
+                              </button>
+                            );
+                          })()}
                           <button
                             type="button"
                             onClick={() => setIsPreviewOpen(true)}

@@ -1,0 +1,2153 @@
+{
+  "schema_version": "1.0.0",
+  "standard": "ISO 2553:2019",
+  "standard_title": "Welding and allied processes — Symbolic representation on drawings — Welded joints",
+  "source_document": "/assets/aistudio/ISO-2553__2019__098c7f8f.pdf",
+  "source_verification": {
+    "attached_pdf_pages": 15,
+    "attached_pdf_type": "iTeh Standard Preview (pages 1–15, ending at Clause 4.4.3 / standard page 9)",
+    "verified_directly_from_attached_pdf": [
+      "Foreword & Introduction",
+      "Full Table of Contents (Clauses 1–7, Annexes A–C)",
+      "Clause 1 (Scope) & Clause 2 (Normative references)",
+      "Clause 3 (Terms and definitions 3.1–3.23)",
+      "Clauses 4.1–4.4.3 & Table 1 (Elementary symbols Nos. 1–22)"
+    ],
+    "compiled_from_iso_2553_2019_published_specification": [
+      "Clauses 4.5–4.8 (Tables 2–5)",
+      "Clause 5 (5.1–5.13 & Table 6)",
+      "Clause 6 (6.1–6.6)",
+      "Clause 7 (7.1–7.2 & Table 7)",
+      "Annex A (Figure A.1), Annex B (Table B.1), Annex C (Tables C.1–C.2)"
+    ]
+  },
+  "compiled_for": "Drawing Audit — Vision-Enabled ISO 2553 Welding Compliance Engine",
+  "enforcement_legend": {
+    "SHALL_MANDATORY": {
+      "iso_directive": "ISO/IEC Directives Part 2 — 'shall' / 'shall not'",
+      "meaning": "Mandatory requirement or explicit prohibition.",
+      "default_audit_severity": "major"
+    },
+    "SHOULD_RECOMMENDED": {
+      "iso_directive": "ISO/IEC Directives Part 2 — 'should' / 'preferable'",
+      "meaning": "Recommended engineering/drafting practice.",
+      "default_audit_severity": "minor"
+    },
+    "DEFAULT_INTERPRETATION": {
+      "iso_directive": "ISO 2553:2019 Omission & Default Conventions",
+      "meaning": "Default interpretation ('unless otherwise indicated' / omission defaults) flagged when drawing intent may be ambiguous.",
+      "default_audit_severity": "question"
+    }
+  },
+  "summary": {
+    "total_rules": 74,
+    "mandatory_rules": 55,
+    "recommended_rules": 15,
+    "default_interpretation_rules": 4,
+    "forbidden_or_deprecated_rules": 12,
+    "system_breakdown": {
+      "both_systems": 65,
+      "system_a_only": 5,
+      "system_b_only": 4
+    },
+    "sections_covered": [
+      {
+        "section_code": "01",
+        "title": "Foreword, Introduction & Clauses 1–2: Scope, System Segregation, and Normative References",
+        "rule_count": 4,
+        "mandatory_count": 2,
+        "recommended_count": 2,
+        "default_interpretation_count": 0,
+        "forbidden_or_deprecated_count": 0
+      },
+      {
+        "section_code": "03",
+        "title": "Clause 3: Terms, Definitions, and Deprecated Terminology",
+        "rule_count": 6,
+        "mandatory_count": 4,
+        "recommended_count": 0,
+        "default_interpretation_count": 2,
+        "forbidden_or_deprecated_count": 3
+      },
+      {
+        "section_code": "04",
+        "title": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+        "rule_count": 31,
+        "mandatory_count": 22,
+        "recommended_count": 8,
+        "default_interpretation_count": 1,
+        "forbidden_or_deprecated_count": 4
+      },
+      {
+        "section_code": "05",
+        "title": "Clause 5: Dimensioning of Welds (and Table 6)",
+        "rule_count": 21,
+        "mandatory_count": 20,
+        "recommended_count": 0,
+        "default_interpretation_count": 1,
+        "forbidden_or_deprecated_count": 5
+      },
+      {
+        "section_code": "06",
+        "title": "Clause 6: Dimensioning of Joint Preparations",
+        "rule_count": 6,
+        "mandatory_count": 5,
+        "recommended_count": 1,
+        "default_interpretation_count": 0,
+        "forbidden_or_deprecated_count": 0
+      },
+      {
+        "section_code": "07",
+        "title": "Clause 7: Alternative Butt Weld Symbol with Required Weld Quality (and Table 7)",
+        "rule_count": 2,
+        "mandatory_count": 1,
+        "recommended_count": 1,
+        "default_interpretation_count": 0,
+        "forbidden_or_deprecated_count": 0
+      },
+      {
+        "section_code": "AX",
+        "title": "Annexes A, B & C: Element Location Maps, Weld Type Transitions, and Alternative Intermittent Designations",
+        "rule_count": 4,
+        "mandatory_count": 1,
+        "recommended_count": 3,
+        "default_interpretation_count": 0,
+        "forbidden_or_deprecated_count": 0
+      }
+    ]
+  },
+  "normative_reference_tables": {
+    "table_1_elementary_symbols": [
+      {
+        "no": "1",
+        "designation": "Square butt",
+        "full_penetration_default": true,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "2",
+        "designation": "Single-V butt",
+        "full_penetration_default": true,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "3",
+        "designation": "Single-V butt with broad root face",
+        "full_penetration_default": true,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "4",
+        "designation": "Single-bevel butt",
+        "full_penetration_default": true,
+        "multi_member_allowed": false,
+        "vertical_leg_left_mandatory": true
+      },
+      {
+        "no": "5",
+        "designation": "Single-bevel butt with broad root face",
+        "full_penetration_default": true,
+        "multi_member_allowed": false,
+        "vertical_leg_left_mandatory": true
+      },
+      {
+        "no": "6",
+        "designation": "Single-U butt",
+        "full_penetration_default": true,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "7",
+        "designation": "Single-J butt",
+        "full_penetration_default": true,
+        "multi_member_allowed": false,
+        "vertical_leg_left_mandatory": true
+      },
+      {
+        "no": "8",
+        "designation": "Flare V",
+        "full_penetration_default": false,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "9",
+        "designation": "Flare bevel",
+        "full_penetration_default": false,
+        "multi_member_allowed": false,
+        "vertical_leg_left_mandatory": true
+      },
+      {
+        "no": "10",
+        "designation": "Fillet",
+        "full_penetration_default": false,
+        "multi_member_allowed": false,
+        "vertical_leg_left_mandatory": true
+      },
+      {
+        "no": "11",
+        "designation": "Plug (circular or elongated hole/slot)",
+        "full_penetration_default": false,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "12.1",
+        "designation": "Resistance spot",
+        "full_penetration_default": false,
+        "multi_member_allowed": true
+      },
+      {
+        "no": "12.2",
+        "designation": "Projection (System A centered / System B above or below)",
+        "full_penetration_default": false,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "13",
+        "designation": "Fusion spot",
+        "full_penetration_default": false,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "14",
+        "designation": "Resistance seam",
+        "full_penetration_default": false,
+        "multi_member_allowed": true
+      },
+      {
+        "no": "15",
+        "designation": "Fusion seam",
+        "full_penetration_default": false,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "16",
+        "designation": "Stud",
+        "full_penetration_default": false,
+        "multi_member_allowed": false,
+        "arrow_side_only": true
+      },
+      {
+        "no": "17",
+        "designation": "Steep-flanked single-V butt",
+        "full_penetration_default": true,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "18",
+        "designation": "Steep-flanked single-bevel butt",
+        "full_penetration_default": true,
+        "multi_member_allowed": false,
+        "vertical_leg_left_mandatory": true
+      },
+      {
+        "no": "19",
+        "designation": "Edge",
+        "full_penetration_default": false,
+        "multi_member_allowed": true
+      },
+      {
+        "no": "20.1",
+        "designation": "Flanged butt (see also Table 4)",
+        "full_penetration_default": false,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "20.2",
+        "designation": "Flanged corner",
+        "full_penetration_default": false,
+        "multi_member_allowed": false
+      },
+      {
+        "no": "21",
+        "designation": "Overlay",
+        "full_penetration_default": false,
+        "multi_member_allowed": false,
+        "arrow_side_only": true
+      },
+      {
+        "no": "22",
+        "designation": "Stake",
+        "full_penetration_default": false,
+        "multi_member_allowed": true
+      }
+    ],
+    "table_3_supplementary_symbols": [
+      "Flat (flush) contour",
+      "Convex contour",
+      "Concave contour",
+      "Toes blended smoothly",
+      "Permanent backing strip (M)",
+      "Removable backing strip (MR)",
+      "Consumable insert (square)",
+      "Spacer (rectangle)",
+      "Back run / Backing weld",
+      "Root reinforcement / Melt-through",
+      "Weld-all-around (circle at junction)",
+      "Welds made from point to point (between A and B)",
+      "Field weld (filled flag at junction)",
+      "Staggered intermittent weld (Z across reference line — System A)"
+    ],
+    "dimensioning_prefixes_clause_5_and_6": {
+      "a": "Nominal throat thickness of equal-leg fillet weld (SHALL NOT be used for unequal-leg fillets)",
+      "z": "Leg length of fillet weld (unequal legs formatted as z1 × z2)",
+      "s": "Penetration depth (butt/edge/flare/overlay) or deep penetration throat thickness ahead of a (s8 a6)",
+      "d": "Diameter of circular plug weld (preceded by Ø), spot weld, or stud weld",
+      "c": "Width of slot weld, seam weld, or stake weld (or root face depth in Clause 6.4)",
+      "l": "Nominal length of continuous weld or intermittent weld element (placed right of symbol)",
+      "n": "Number of weld elements (intermittent, spot, plug, stud)",
+      "e": "System A clear spacing between adjacent intermittent weld elements, placed in parentheses: n × l (e)",
+      "p": "System B center-to-center pitch between intermittent weld elements, separated by hyphen: l - p or n × l - p",
+      "b": "Root gap (placed inside elementary symbol, one side only for double-sided joints)",
+      "α": "Included groove angle (placed above/below in opening of elementary symbol)",
+      "β": "Included countersink angle for plug welds (placed above/below plug symbol)",
+      "R": "Root radius for U and J butt joints (specified on cross-section or WPS)",
+      "h": "Depth of joint preparation (Clause 6.5; distinguished from penetration depth via parentheses or explicit prefix)"
+    },
+    "tail_information_sequence_clause_4_8": [
+      "1. Quality level (e.g., ISO 5817-B/C/D, ISO 10042)",
+      "2. Welding process reference number per ISO 4063 (e.g., 111 SMAW, 121 SAW, 131 MIG, 135 MAG, 136 FCAW-G, 138 Metal-cored, 141 TIG, 15 PAW, 21 RSW, 22 RSEW, 23 PW, 51 EBW, 52 LBW, 78 Stud)",
+      "3. Filler material designation",
+      "4. Welding position per ISO 6947 (e.g., PA, PB, PC, PD, PE, PF, PG)",
+      "5. Supplementary information (WPS reference, NDT, backgouging, root shielding)"
+    ],
+    "deprecated_terminology_clause_3": {
+      "sealing run": "DEPRECATED (3.13) — use 'back run'",
+      "weld metal thickness": "DEPRECATED (3.18) — use 'penetration depth' or 'deposit thickness'"
+    },
+    "table_B1_transition_points": {
+      "butt_weld_alignment": "Aligned/near-aligned members (angular deviation typically <= 5°)",
+      "edge_weld_alignment": "Parallel/near-parallel edge members (angular deviation typically <= 5°)",
+      "fillet_weld_dihedral_range": "Standard fillet weld dihedral angle between 60° and 120°; skewed joints < 60° or > 120° require cross-section detail or bevel groove consideration"
+    }
+  },
+  "rules": [
+    {
+      "rule_id": "ISO2553-01-001",
+      "citation_id": "ISO-2553-2019 Introduction",
+      "section": "Foreword, Introduction & Clauses 1–2: Scope, System Segregation, and Normative References",
+      "category": "Drawing Clarity & Collective References",
+      "title": "Use of Collective Notes and Production Documents (WPS) to Avoid Overburdening Drawings",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "GENERAL_NOTES"
+      ],
+      "visual_syntax_triggers": [
+        "WPS",
+        "General Welding Notes",
+        "ISO 14731",
+        "Cluttered Symbols"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Welding-related drawings SHOULD convey design specifications clearly without overburdening individual symbols by referencing collective drawing notes or production documents (e.g., WPS, work schedules) for repetitive process, preheating, or position data, and SHOULD be prepared/checked by trained welding personnel (ISO 14731).",
+      "pass_condition": "Repetitive process, filler, quality-level, or inspection parameters are consolidated cleanly into general notes or referenced WPS documents rather than cluttering every weld symbol tail.",
+      "fail_condition": "Identical verbose process/preheat/NDT paragraphs are repeated inside dozens of welding symbol tails, making the drawing illegible or prone to inconsistent edits.",
+      "remediation": "Consolidate shared process, quality level, and WPS references into a general welding note block and keep individual welding symbol tails concise."
+    },
+    {
+      "rule_id": "ISO2553-01-002",
+      "citation_id": "ISO-2553-2019 1",
+      "section": "Foreword, Introduction & Clauses 1–2: Scope, System Segregation, and Normative References",
+      "category": "Scope & System Suffix Interpretation",
+      "title": "Strict Applicability of System A (Dual Reference Line) vs. System B (Single Reference Line) Rules",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "TITLE_BLOCK"
+      ],
+      "visual_syntax_triggers": [
+        "ISO 2553-A",
+        "ISO 2553-B",
+        "Dual Reference Line",
+        "Single Reference Line"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Clauses, tables, and figures carrying suffix 'A' apply ONLY to System A (dual reference line: continuous + dashed), suffix 'B' applies ONLY to System B (single reference line), and unsuffixed provisions apply to both systems; every welding symbol on the drawing SHALL conform exclusively to the declared system.",
+      "pass_condition": "Every welding symbol follows either System A rules (dual reference line) or System B rules (single reference line) consistently with the declared standard invocation.",
+      "fail_condition": "A drawing invoking ISO 2553-A uses System B single-line other-side placement, or a drawing invoking ISO 2553-B introduces dashed identification lines.",
+      "remediation": "Enforce strict adherence to either System A or System B rules across every welding symbol on the drawing."
+    },
+    {
+      "rule_id": "ISO2553-01-003",
+      "citation_id": "ISO-2553-2019 1",
+      "section": "Foreword, Introduction & Clauses 1–2: Scope, System Segregation, and Normative References",
+      "category": "Scope — Brazed & Soldered Joints",
+      "title": "Application of ISO 2553 Principles to Brazed and Soldered Joints",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BRAZING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Braze",
+        "Solder",
+        "ISO 4063 Process 9xx"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When ISO 2553 symbolic representation principles are applied to brazed or soldered joints, the brazing or soldering process (e.g., ISO 4063 9xx code) SHOULD be explicitly indicated in the tail or general notes so the joint is not mistaken for a fusion weld.",
+      "pass_condition": "Brazed or soldered joints represented using ISO 2553 symbols clearly specify the ISO 4063 brazing/soldering process in the tail or general notes.",
+      "fail_condition": "A brazed or soldered joint uses a standard welding symbol without indicating brazing/soldering in the tail or notes.",
+      "remediation": "Add the applicable ISO 4063 brazing or soldering process number (9xx series) to the tail or general notes."
+    },
+    {
+      "rule_id": "ISO2553-01-004",
+      "citation_id": "ISO-2553-2019 2",
+      "section": "Foreword, Introduction & Clauses 1–2: Scope, System Segregation, and Normative References",
+      "category": "Normative Standards Compliance",
+      "title": "Compliance with Normatively Referenced ISO Drawing, Dimensioning, Lettering, and Process Standards",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "TITLE_BLOCK",
+        "GENERAL_NOTES"
+      ],
+      "visual_syntax_triggers": [
+        "ISO 128",
+        "ISO 129-1",
+        "ISO 3098-2",
+        "ISO 4063",
+        "ISO/TR 25901"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Welding symbols SHALL conform to ISO 128 (line conventions), ISO 129-1 (dimensioning and units), ISO 3098-2 (lettering), ISO 4063 (welding process numeric codes when numeric codes are used), and ISO/TR 25901 (welding vocabulary).",
+      "pass_condition": "Line weights, dimensioning units, lettering, process numbers, and welding terminology conform to the normatively referenced ISO standards.",
+      "fail_condition": "Welding symbols use non-ISO process numbers, inconsistent unit conventions violating ISO 129-1, or non-standard vocabulary contradicting ISO/TR 25901.",
+      "remediation": "Align drawing line conventions, dimension units, lettering, process codes, and terminology with ISO 128, ISO 129-1, ISO 3098-2, ISO 4063, and ISO/TR 25901."
+    },
+    {
+      "rule_id": "ISO2553-03-001",
+      "citation_id": "ISO-2553-2019 3.13",
+      "section": "Clause 3: Terms, Definitions, and Deprecated Terminology",
+      "category": "Deprecated Terminology",
+      "title": "Prohibition of Deprecated Term 'Sealing Run' (Use 'Back Run')",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "GENERAL_NOTES",
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "SEALING RUN",
+        "BACK RUN"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The term 'sealing run' is explicitly DEPRECATED in ISO 2553:2019 Clause 3.13; drawings and welding symbol tails SHALL use 'back run' to denote the final run deposited on the root side of a fusion weld (and distinguish it from 'backing weld' per 3.14).",
+      "pass_condition": "Root-side final runs are termed 'back run' (or represented with the standard back run supplementary symbol) with zero occurrences of 'sealing run'.",
+      "fail_condition": "Drawing notes, callouts, or welding symbol tails contain the deprecated term 'sealing run'.",
+      "remediation": "Replace all occurrences of 'sealing run' with 'back run' (or the standard ISO 2553 back run symbol)."
+    },
+    {
+      "rule_id": "ISO2553-03-002",
+      "citation_id": "ISO-2553-2019 3.14",
+      "section": "Clause 3: Terms, Definitions, and Deprecated Terminology",
+      "category": "Terminology Precision",
+      "title": "Distinction Between Back Run (Final Root Pass) and Backing Weld (Pre-Deposited Backing)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "DEFAULT_INTERPRETATION",
+      "default_audit_severity": "question",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "GENERAL_NOTES"
+      ],
+      "visual_syntax_triggers": [
+        "Back Run",
+        "Backing Weld",
+        "Multiple Reference Lines"
+      ],
+      "audit_check": "[BOTH SYSTEMS] 'Back run' (3.13) is the final run deposited on the root side after the main weld, whereas 'backing weld' (3.14) is backing deposited in the form of a weld BEFORE the main weld; where sequence is functionally critical, multiple reference lines (4.7.3) or tail notes clarify whether a back run or backing weld is intended.",
+      "pass_condition": "Operation sequence between main groove weld and root-side back run or pre-weld backing weld is unambiguous (via multiple reference lines or tail notation).",
+      "fail_condition": "A single reference line combines a groove weld and back-run/backing-weld symbol without indicating sequence where welding order affects root quality or backgouging.",
+      "remediation": "Use multiple reference lines (4.7.3) to sequence backing weld (1st line) -> main weld (2nd line), or main weld (1st line) -> back run (2nd line)."
+    },
+    {
+      "rule_id": "ISO2553-03-003",
+      "citation_id": "ISO-2553-2019 3.15",
+      "section": "Clause 3: Terms, Definitions, and Deprecated Terminology",
+      "category": "Weld Length Definition",
+      "title": "Nominal Weld Length Means Full-Size Effective Length (3.15 & 3.15.1)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "DEFAULT_INTERPRETATION",
+      "default_audit_severity": "question",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Nominal Weld Length",
+        "l",
+        "Full Size",
+        "Start/Stop Craters"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Clauses 3.15 and 3.15.1, nominal weld length (l) — both for continuous welds and each element of an intermittent weld — is interpreted by default as the length over which the weld has its full specified cross-sectional size.",
+      "pass_condition": "Specified weld lengths allow for full-size weld deposit without conflicting with tight edge clearances or start/stop crater allowances.",
+      "fail_condition": "Drawing notes contradict ISO 2553 by redefining nominal length to include undersized start/stop craters without explicit clarification, or nominal length cannot physically fit on the available edge.",
+      "remediation": "Ensure nominal weld length specifications match full-size length expectations and physically fit within the joint boundaries."
+    },
+    {
+      "rule_id": "ISO2553-03-004",
+      "citation_id": "ISO-2553-2019 3.16",
+      "section": "Clause 3: Terms, Definitions, and Deprecated Terminology",
+      "category": "Fillet Throat Prefix Restriction",
+      "title": "Prohibition of Nominal Throat Prefix 'a' on Unequal-Leg Fillet Welds",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "a",
+        "Unequal Leg Fillet",
+        "z1 x z2",
+        "Table 6 No. 2.3"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Nominal throat thickness 'a' is strictly defined as the height of the largest isosceles triangle inscribed in a fillet weld cross-section; per Clause 3.16 Note 1, for fillet welds with unequal leg lengths (or other non-isosceles throat definitions), the prefix 'a' SHALL NOT be used.",
+      "pass_condition": "Prefix 'a' is used exclusively for equal-leg (isosceles) fillet welds; unequal-leg fillet welds are dimensioned with leg lengths 'z1 × z2' (or explicit non-'a' cross-section sketches).",
+      "fail_condition": "An unequal-leg fillet weld callout uses prefix 'a' (e.g., 'a5' alongside an asymmetrical fillet detail or 'a4×6').",
+      "remediation": "Remove prefix 'a' from unequal-leg fillet welds and specify explicit unequal leg lengths (z1 × z2) with leg orientation clearly indicated on the drawing."
+    },
+    {
+      "rule_id": "ISO2553-03-005",
+      "citation_id": "ISO-2553-2019 3.18",
+      "section": "Clause 3: Terms, Definitions, and Deprecated Terminology",
+      "category": "Deprecated Terminology",
+      "title": "Prohibition of Deprecated Term 'Weld Metal Thickness' (Use 'Penetration Depth' / 'Deposit Thickness')",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "GENERAL_NOTES",
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "WELD METAL THICKNESS",
+        "PENETRATION DEPTH",
+        "DEPOSIT THICKNESS"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The term 'weld metal thickness' is explicitly DEPRECATED in ISO 2553:2019 Clause 3.18; drawings and specifications SHALL use 'penetration depth' (or 'deposit thickness'), defined as the thickness of the weld metal excluding any reinforcement.",
+      "pass_condition": "Drawing notes and specifications use 'penetration depth' or 'deposit thickness' (excluding reinforcement) with zero occurrences of 'weld metal thickness'.",
+      "fail_condition": "Drawing notes or welding specifications use the deprecated phrase 'weld metal thickness' or erroneously include weld cap reinforcement inside penetration depth 's'.",
+      "remediation": "Replace 'weld metal thickness' with 'penetration depth' (or 'deposit thickness') and verify reinforcement is excluded from dimension 's'."
+    },
+    {
+      "rule_id": "ISO2553-03-006",
+      "citation_id": "ISO-2553-2019 3.23",
+      "section": "Clause 3: Terms, Definitions, and Deprecated Terminology",
+      "category": "Stake Weld Applicability",
+      "title": "Stake Weld Restricted to Laser or Electron Beam T-Joints Irradiated Through Horizontal Flange",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "STAKE_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Stake Weld",
+        "T-Joint",
+        "Laser Beam 52",
+        "Electron Beam 51"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Clause 3.23, the stake weld symbol (Table 1 No. 22) applies specifically to a T-joint where a laser beam (ISO 4063 52) or electron beam (ISO 4063 51) is irradiated from a horizontal plate/flange into a vertical plate/web (such as corrugated or folded panels).",
+      "pass_condition": "Stake weld symbol is applied to a laser or electron beam T-joint with the arrow pointing to the irradiated flange surface.",
+      "fail_condition": "Stake weld symbol is misapplied to an arc-welded fillet/groove joint or to a butt/lap joint without a vertical web.",
+      "remediation": "Reserve the stake weld symbol for laser/EB T-joint stake welds and use standard fillet, groove, or seam symbols for arc-welded or lap joints."
+    },
+    {
+      "rule_id": "ISO2553-04-001",
+      "citation_id": "ISO-2553-2019 4.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Mandatory Symbol Elements",
+      "title": "Reference Line and Arrow Line Are Mandatory Elements of Every Welding Symbol",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Reference Line",
+        "Arrow Line",
+        "Detached Weld Symbol"
+      ],
+      "audit_check": "[BOTH SYSTEMS] A reference line and an arrow line are REQUIRED elements of every welding symbol; standalone weld glyphs or text callouts without an arrow line and reference line SHALL NOT be used.",
+      "pass_condition": "Every welding symbol contains both a reference line and an arrow line terminating cleanly on the target joint.",
+      "fail_condition": "An elementary weld glyph floats on the drawing without a reference line or without an arrow line connecting it to a joint.",
+      "remediation": "Construct every welding symbol with a complete reference line and an arrow line pointing unambiguously to the joint."
+    },
+    {
+      "rule_id": "ISO2553-04-002",
+      "citation_id": "ISO-2553-2019 4.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Preferred Arrow-Side Placement",
+      "title": "Preference for Showing Welding Symbol on Arrow Side of Joint",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Other Side Only",
+        "Arrow Side Preferred"
+      ],
+      "audit_check": "[BOTH SYSTEMS] It is PREFERABLE to show the welding symbol pointing directly to the side of the joint on which the weld is made (the arrow side) whenever drawing geometry permits, rather than needlessly placing single-sided welds on the other side.",
+      "pass_condition": "Single-sided welds are placed on the arrow side wherever the weld face is directly accessible in the drawing view.",
+      "fail_condition": "Single-sided welds are repeatedly called out on the other side even though the welded face is clearly visible and reachable by the arrow line.",
+      "remediation": "Point the arrow line directly to the welded side of the joint and place the elementary symbol on the arrow side where clear."
+    },
+    {
+      "rule_id": "ISO2553-04-003",
+      "citation_id": "ISO-2553-2019 4.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Line Weight & Lettering",
+      "title": "Line Thickness and Lettering Must Conform to ISO 128 and ISO 3098-2",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "ISO 128",
+        "ISO 3098-2",
+        "Line Weight",
+        "Letter Height"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The line thickness of arrow lines, reference lines, and elementary symbols, as well as the style and proportions of lettering, SHALL conform to ISO 128 (all parts) and ISO 3098-2.",
+      "pass_condition": "Arrow lines, reference lines, symbols, and characters use consistent ISO 128 narrow continuous/dashed line weights and legible ISO 3098-2 lettering matching drawing dimension height.",
+      "fail_condition": "Welding symbol lines are indistinguishable from thick object outlines, dashed identification lines are drawn too faintly/ambiguously, or lettering is illegible/non-standard.",
+      "remediation": "Format welding symbol lines and lettering to standard ISO 128 line thicknesses and ISO 3098-2 text height/style."
+    },
+    {
+      "rule_id": "ISO2553-04-004",
+      "citation_id": "ISO-2553-2019 4.2",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Basic Welding Symbol",
+      "title": "Basic Welding Symbol Must Comprise Arrow Line, Reference Line, and Tail (Figure 1)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Basic Welding Symbol",
+        "Figure 1",
+        "Tack Weld",
+        "No Elementary Symbol"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When joint details and weld type are not specified and the only requirement is to indicate that a joint is to be welded (e.g., tack weld location), the basic welding symbol SHALL comprise an arrow line, a single continuous reference line, and a tail (Figure 1); in System A, the dashed identification line is NOT required for the basic welding symbol.",
+      "pass_condition": "Unspecified-joint basic welding symbol includes arrow line + single continuous reference line + V-shaped tail (with explanatory info if needed).",
+      "fail_condition": "An empty arrow + reference line with no elementary symbol ALSO omits the tail, making it look like an incomplete or broken leader line.",
+      "remediation": "Add the mandatory tail to complete the Figure 1 basic welding symbol (or add the appropriate elementary weld symbol if weld type is defined)."
+    },
+    {
+      "rule_id": "ISO2553-04-005",
+      "citation_id": "ISO-2553-2019 4.3",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "System Segregation & Title Block Declaration",
+      "title": "Prohibition of Mixing System A and System B; Mandatory System & Unit Declaration",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "TITLE_BLOCK",
+        "GENERAL_NOTES"
+      ],
+      "visual_syntax_triggers": [
+        "ISO 2553-A",
+        "ISO 2553-B",
+        "Dual Reference Line",
+        "Single Reference Line",
+        "ISO 129-1 Units"
+      ],
+      "audit_check": "[BOTH SYSTEMS] System A (dual reference line: continuous + dashed) and System B (single reference line) SHALL NOT be mixed on the same drawing, AND the drawing SHALL clearly indicate which system is used (e.g., 'ISO 2553-A' or 'ISO 2553-B') including units of measurement in accordance with ISO 129-1.",
+      "pass_condition": "Title block or general notes explicitly declare 'ISO 2553-A' (or 'ISO 2553-B') along with ISO 129-1 units (e.g., mm), and 100% of welding symbols on the drawing strictly use that single system.",
+      "fail_condition": "Drawing mixes dual-line System A symbols and single-line System B symbols on the same sheet/packet, or invokes bare 'ISO 2553' without specifying System A or System B and measurement units.",
+      "remediation": "Explicitly state 'ISO 2553:2019 — System A' (or 'System B') and ISO 129-1 units in the title block/notes, and convert all welding symbols to that single system."
+    },
+    {
+      "rule_id": "ISO2553-04-006",
+      "citation_id": "ISO-2553-2019 4.4.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Elementary Symbol Attachment",
+      "title": "Elementary Symbols Must Conform to Table 1 and Attach Directly to Reference Line",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Table 1 Elementary Symbols",
+        "Reference Line Attachment",
+        "Mid-Point"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Elementary symbols SHALL conform to ISO 2553 Table 1 (Nos. 1–22) and SHALL be drawn directly attached to (touching) the reference line, generally at its mid-point.",
+      "pass_condition": "Every elementary weld symbol uses an exact Table 1 glyph touching the reference line near its mid-point.",
+      "fail_condition": "Elementary symbol uses a non-standard/invented shape or floats detached with a gap from the reference line.",
+      "remediation": "Use standard Table 1 elementary symbols and snap each symbol directly onto the reference line near its mid-point."
+    },
+    {
+      "rule_id": "ISO2553-04-007",
+      "citation_id": "ISO-2553-2019 4.4.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Elementary Symbol Orientation",
+      "title": "Orientation of Elementary Symbols Shall Not Be Changed (Perpendicular Leg Always Left)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD",
+        "GROOVE_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Mirrored Fillet Symbol",
+        "Mirrored Bevel Symbol",
+        "Mirrored J Symbol",
+        "Mirrored Flare-Bevel",
+        "Vertical Leg Left"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The orientation of elementary symbols SHALL NOT be changed from that shown in Tables 1 to 3: the perpendicular (vertical) leg of fillet, single-bevel butt, single-bevel with broad root face, single-J butt, flare-bevel, and steep-flanked single-bevel symbols SHALL ALWAYS be drawn to the LEFT regardless of arrow direction or joint orientation.",
+      "pass_condition": "All asymmetrical elementary symbols (Nos. 4, 5, 7, 9, 10, 18) keep their vertical/perpendicular leg strictly on the left side.",
+      "fail_condition": "A fillet, bevel, J, flare-bevel, or steep-flanked bevel symbol is horizontally mirrored with its vertical leg on the right to mimic the drawing view geometry or arrow direction.",
+      "remediation": "Flip horizontally mirrored elementary symbols so the perpendicular/vertical leg is always drawn on the left per Tables 1–3."
+    },
+    {
+      "rule_id": "ISO2553-04-008",
+      "citation_id": "ISO-2553-2019 4.4.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Complex Weld Representation",
+      "title": "Cross-Sectional Views Permitted When Symbolic Illustration Is Insufficient",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "2D_ORTHOGRAPHIC"
+      ],
+      "visual_syntax_triggers": [
+        "Complex Joint Geometry",
+        "Cross-Section View",
+        "Custom Preparation"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When clear and unambiguous illustration by means of standard ISO 2553 welding symbols is not possible (e.g., compound bevels, specialized backing, or non-standard weld cross-sections), detailed dimensioned cross-sections of the welds SHOULD be drawn on the drawing.",
+      "pass_condition": "Non-standard or complex compound weld preparations include a clearly dimensioned cross-section detail view referenced by the welding symbol.",
+      "fail_condition": "A complex non-standard joint attempts to overload an elementary symbol with ambiguous notes instead of providing a dimensioned cross-section.",
+      "remediation": "Add a dimensioned cross-section detail view of the weld joint and reference it from the welding symbol tail."
+    },
+    {
+      "rule_id": "ISO2553-04-009",
+      "citation_id": "ISO-2553-2019 Table 1 Note b",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Butt Weld Penetration Default",
+      "title": "Omission of Penetration Depth on Butt Welds Defaults to Full Penetration",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "DEFAULT_INTERPRETATION",
+      "default_audit_severity": "question",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Butt Weld",
+        "Omitted Penetration Depth s",
+        "Full Penetration Default"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Table 1 Note b, butt welds (Nos. 1–7, 17, 18) are interpreted by default as FULL PENETRATION unless a partial penetration depth 's' is explicitly shown to the left of the symbol or indicated by reference to another document (e.g., WPS).",
+      "pass_condition": "Full penetration is genuinely intended whenever dimension 's' is omitted on a butt weld symbol, and no section view or note contradicts full penetration.",
+      "fail_condition": "Dimension 's' is omitted on a butt weld where a section view, thick-plate geometry without backing, or design note intends partial penetration.",
+      "remediation": "Confirm full penetration is intended (and manufacturable); if partial penetration is intended, specify penetration depth 's' to the left of the butt weld symbol."
+    },
+    {
+      "rule_id": "ISO2553-04-010",
+      "citation_id": "ISO-2553-2019 Table 1 No. 12.2",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Projection Weld System A vs. B Placement",
+      "title": "Projection Weld Symbol Placement Differs Between System A (Centered) and System B (Above/Below)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "PROJECTION_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Projection Weld",
+        "Table 1 No. 12.2",
+        "Centered vs Sided Circle"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Table 1 No. 12.2, in System A the projection weld circle sits centered on the continuous reference line (with embossed member indicated on the continuous/dashed side as required), whereas in System B the projection weld circle SHALL be placed strictly above or below (NEVER centered on) the reference line to designate which member has the embossed projection.",
+      "pass_condition": "Projection weld symbol conforms to Table 1 No. 12.2 for the drawing's active system (System A or System B) and unambiguously identifies the embossed member.",
+      "fail_condition": "A System B drawing centers the projection weld circle on the single reference line, leaving the embossed member unidentified.",
+      "remediation": "Place the projection weld symbol per Table 1 No. 12.2 (in System B, move the circle strictly below or above the reference line to identify the embossed member)."
+    },
+    {
+      "rule_id": "ISO2553-04-011",
+      "citation_id": "ISO-2553-2019 Table 1 Note c",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Multi-Member Welds",
+      "title": "Multi-Member (>2 Plies) Applicability for Resistance Spot, Resistance Seam, Edge, and Stake Symbols",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "SPOT_WELD",
+        "SEAM_WELD",
+        "EDGE_WELD",
+        "STAKE_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "More Than 2 Members",
+        "Multi-Ply Stack",
+        "Table 1 Note c"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Table 1 Note c, elementary symbols for resistance spot (12.1), resistance seam (14), edge (19), and stake (22) welds MAY be used for joints with more than two members, provided the drawing view or cross-section clearly shows all members to be fused.",
+      "pass_condition": "Multi-member (>2 ply) resistance spot, resistance seam, edge, or stake welds clearly depict all participating members in the view or section.",
+      "fail_condition": "A multi-member stack uses a Table 1 Note c symbol without showing which inner plies are included in the weld.",
+      "remediation": "Ensure the drawing view or a cross-section unambiguously displays all members joined by the multi-member weld."
+    },
+    {
+      "rule_id": "ISO2553-04-012",
+      "citation_id": "ISO-2553-2019 4.4.2",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Combined Elementary Symbols",
+      "title": "Valid Combination of Elementary Symbols for Compound Weld Configurations",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Combined Symbols",
+        "Bevel + Fillet",
+        "T-Butt with Fillet"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Elementary symbols MAY be combined as required to represent compound weld configurations (e.g., single-bevel butt with superimposed fillet weld), keeping standard orientations (vertical leg left) and dimensioning every component weld clearly.",
+      "pass_condition": "Combined elementary symbols maintain standard orientation and specify distinct dimensions for each weld component (e.g., butt penetration 's' and fillet throat 'a' or leg 'z').",
+      "fail_condition": "Combined symbols collide graphically, reverse leg orientation, or omit the fillet size on a compound butt-plus-fillet callout.",
+      "remediation": "Draw combined elementary symbols cleanly with vertical legs on the left and provide complete dimensions for each component weld."
+    },
+    {
+      "rule_id": "ISO2553-04-013",
+      "citation_id": "ISO-2553-2019 4.4.3",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Double-Sided Butt Welds",
+      "title": "Opposite Arrangement of Elementary Symbols for Double-Sided Butt Welds",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Double-Sided Butt Weld",
+        "Double-V",
+        "Double-Bevel",
+        "Double-U",
+        "Double-J"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Elementary symbols SHALL be arranged directly opposite each other across the reference line, including all required dimensions and supplementary information on each side, when representing double-sided butt welds (Table 2 and Table A.3).",
+      "pass_condition": "Both elementary symbols sit directly opposite each other across the reference line with required information shown on each side.",
+      "fail_condition": "Double-sided butt weld symbols are staggered horizontally (unless staggered intermittent) or omit dimensions on one side of an asymmetrical double-sided weld.",
+      "remediation": "Align the elementary symbols directly opposite each other on the reference line and specify all required dimensions on both sides."
+    },
+    {
+      "rule_id": "ISO2553-04-014",
+      "citation_id": "ISO-2553-2019 4.4.3",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "System A Symmetrical Weld Dashed Line Deletion",
+      "title": "Deletion of Dashed Reference Line for Symmetrical Double-Sided Welds in System A",
+      "system_applicability": "SYSTEM_A",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Symmetrical Double-Sided Weld",
+        "Dashed Line Deleted",
+        "Table 2"
+      ],
+      "audit_check": "[SYSTEM A] In System A, for symmetrical double-sided welds with identical elementary symbols and identical dimensions on both sides (Table 2), the dashed identification line SHOULD be deleted (leaving only the continuous reference line); for asymmetrical double-sided welds (Table A.3), the dashed line MUST be retained.",
+      "pass_condition": "Symmetrical double-sided welds in System A omit the redundant dashed line, while asymmetrical double-sided welds retain the dashed line to distinguish arrow side from other side.",
+      "fail_condition": "An asymmetrical double-sided weld in System A deletes the dashed reference line (making arrow side vs. other side ambiguous), or symmetrical welds retain unnecessary dashed-line clutter.",
+      "remediation": "Delete the dashed line for strictly symmetrical double-sided welds in System A, and ALWAYS retain the dashed line for any asymmetrical double-sided weld."
+    },
+    {
+      "rule_id": "ISO2553-04-015",
+      "citation_id": "ISO-2553-2019 4.5.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Supplementary Symbols",
+      "title": "Standard Supplementary Symbols and Placement Conform to Table 3",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Table 3 Supplementary Symbols",
+        "Flush",
+        "Convex",
+        "Concave",
+        "Toes Blended Smoothly",
+        "Backing",
+        "Spacer",
+        "Consumable Insert"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Supplementary symbols (flat/flush, convex, concave contour, toes blended smoothly, permanent backing strip 'M', removable backing strip 'MR', consumable insert, spacer, back run/backing weld, melt-through, weld-all-around, point-to-point, field weld, and staggered intermittent 'Z') SHALL conform strictly to Table 3 shapes and placement.",
+      "pass_condition": "All supplementary glyphs match ISO 2553 Table 3 forms and positions relative to the elementary symbol and reference line.",
+      "fail_condition": "Non-standard shapes or free-text substitutions are used in place of Table 3 supplementary symbols, or permanent/removable backing strips omit the required 'M'/'MR' distinction.",
+      "remediation": "Replace non-standard glyphs with the exact ISO 2553 Table 3 supplementary symbols and specify 'M' (permanent) or 'MR' (removable) on backing strips."
+    },
+    {
+      "rule_id": "ISO2553-04-016",
+      "citation_id": "ISO-2553-2019 4.5.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Weld Surface Contour & Finishing",
+      "title": "Contour Symbols and Smooth Toe Blending Combined with Surface Finish Symbols",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Flush Contour",
+        "Convex",
+        "Concave",
+        "Toes Blended Smoothly",
+        "ISO 1302"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Where a required weld face contour (flat/flush, convex, concave) or smooth weld-toe blending requires specific mechanical finishing or surface roughness, the contour supplementary symbol SHOULD be combined with standard ISO surface texture symbols (ISO 1302 / ISO 21920) or finishing notes in the tail.",
+      "pass_condition": "Contour symbols requiring grinding/machining specify the required finishing method or ISO surface texture symbol rather than leaving finishing ambiguous.",
+      "fail_condition": "A flush contour symbol is used on a fatigue-critical joint with no indication of whether as-welded flush or ground/machined flush is required.",
+      "remediation": "Clarify whether flush/smooth-toe contour is as-welded or postweld finished via an ISO surface texture symbol or explicit tail note."
+    },
+    {
+      "rule_id": "ISO2553-04-017",
+      "citation_id": "ISO-2553-2019 4.5.2",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Weld-All-Around Symbol",
+      "title": "Weld-All-Around Circle Placement and Continuous Same-Plane/Same-Type Restrictions",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Weld-All-Around Circle",
+        "Arrow-Reference Junction",
+        "Abrupt Geometry Change",
+        "Closed Periphery"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The weld-all-around symbol (circle centered at the junction of the arrow line and reference line) SHALL be used ONLY for a continuous closed-loop weld of the SAME weld type and SAME dimensions lying in a continuous periphery; it SHALL NOT be used where weld type or size changes around the perimeter (e.g., rectangular/square HSS tubing mixing fillet and flare-bevel sides), where the weld is intermittent/discontinuous, or in place of double-sided symbols.",
+      "pass_condition": "Weld-all-around circle sits cleanly at the arrow-reference junction and governs a continuous closed periphery of uniform weld type and size.",
+      "fail_condition": "Weld-all-around circle is applied to an open-ended joint, a multi-plane path where weld type changes (e.g., fillet to flare-bevel), or an intermittent weld.",
+      "remediation": "Remove the weld-all-around symbol where geometry, weld type, or size changes; use multiple arrows, point-to-point symbols (4.5.3), or separate welding symbols instead."
+    },
+    {
+      "rule_id": "ISO2553-04-018",
+      "citation_id": "ISO-2553-2019 4.5.3",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Point-to-Point Welds",
+      "title": "Welds of the Same Type Made Continuously from Point to Point Between Defined Points",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "2D_ORTHOGRAPHIC"
+      ],
+      "visual_syntax_triggers": [
+        "Point-to-Point",
+        "Between A and B",
+        "Continuous Around Corners",
+        "Partial Perimeter"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When a weld of the same type and size continues across changes in direction between two specific points without forming a closed loop, the point-to-point supplementary symbol (or explicit point designators, e.g., A to B, shown both on the drawing and in the welding symbol) SHALL unambiguously identify the start and termination points.",
+      "pass_condition": "Start and end points (e.g., A and B) are clearly labeled on the drawing geometry and matched in the welding symbol callout.",
+      "fail_condition": "A continuous partial-perimeter weld wrapping around corners uses either an invalid weld-all-around circle or a single arrow without defining the start and stop points.",
+      "remediation": "Mark the exact start and termination points on the drawing (e.g., A and B) and apply the ISO 2553 Clause 4.5.3 point-to-point notation."
+    },
+    {
+      "rule_id": "ISO2553-04-019",
+      "citation_id": "ISO-2553-2019 4.5.4",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Field Welds",
+      "title": "Field Weld Flag Placed at Junction of Arrow Line and Reference Line",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Field Weld Flag",
+        "Site Weld",
+        "Arrow-Reference Junction"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Welds to be made outside workshops at the place of final installation (field/site welds, Clause 3.22) SHALL be designated by placing the filled field weld flag perpendicular to the reference line at the junction of the arrow line and the reference line.",
+      "pass_condition": "Filled field weld flag is positioned precisely at the junction of the arrow line and reference line.",
+      "fail_condition": "Field weld flag is drawn hollow/unfilled, placed at the tail or mid-span of the reference line, or omitted while notes call for site welding.",
+      "remediation": "Place the standard filled field weld flag at the junction of the arrow line and reference line."
+    },
+    {
+      "rule_id": "ISO2553-04-020",
+      "citation_id": "ISO-2553-2019 4.5.5",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Root Reinforcement / Melt-Through",
+      "title": "Root Reinforcement (Melt-Through) Placed Opposite Elementary Butt Symbol for One-Sided Welds",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Melt-Through",
+        "Root Reinforcement",
+        "One-Sided Butt Weld"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When complete penetration with specified root reinforcement (melt-through) is required on a butt weld made from one side, the melt-through supplementary symbol SHALL be placed on the opposite side of the reference line from the elementary weld symbol (dashed line side in System A; opposite side in System B).",
+      "pass_condition": "Melt-through semicircular symbol sits directly opposite the elementary butt weld symbol across the reference line (with optional contour/height if specified).",
+      "fail_condition": "Melt-through symbol is placed on the same side as the butt weld symbol or applied simultaneously with a double-sided groove weld symbol.",
+      "remediation": "Place the melt-through supplementary symbol opposite the elementary weld symbol on single-sided butt welds."
+    },
+    {
+      "rule_id": "ISO2553-04-021",
+      "citation_id": "ISO-2553-2019 4.5.6",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Flanged Butt & Flanged Corner Joints",
+      "title": "Distinction Between Complete-Penetration and Partial-Penetration Flanged Butt and Flanged Corner Welds (Tables 4 & 5)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "EDGE_WELD",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Flanged Butt",
+        "Flanged Corner",
+        "Table 4",
+        "Table 5",
+        "Edge Weld"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Clause 4.5.6 and Tables 4 & 5, complete-penetration welds on flanged butt joints SHALL be represented by the flanged butt symbol (Table 1 No. 20.1) or edge weld symbol with melt-through (per System A/B Table 4–5 conventions), whereas partial-penetration welds on flanged butt or flanged corner joints SHALL use the edge weld symbol (No. 19) with specified penetration depth 's' (and flange dimensions drawn on the part view, not inside the welding symbol).",
+      "pass_condition": "Flanged butt and flanged corner welds match Table 4 and Table 5 conventions for complete vs. partial penetration, with bend radii and flange heights dimensioned on the drawing.",
+      "fail_condition": "A partial-penetration flanged joint uses a flanged butt symbol with no penetration depth, or double-edge symbols are erroneously applied to a flanged joint instead of edge + flare-groove.",
+      "remediation": "Apply ISO 2553 Tables 4 and 5 symbols for flanged butt and flanged corner joints, specifying 's' for partial penetration and dimensioning flange geometry on the drawing."
+    },
+    {
+      "rule_id": "ISO2553-04-022",
+      "citation_id": "ISO-2553-2019 4.6.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Arrow Line Geometry",
+      "title": "Arrow Line Angle, Joint Contact, and Prohibition of Ambiguous Horizontal Arrow",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Arrow Line",
+        "135 Degrees",
+        "Joint Line Contact"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The arrow line SHALL terminate in an arrowhead touching a continuous visible line representing the joint (avoiding hidden lines where possible), SHALL connect to either end of the continuous reference line at an angle (generally 135°), and SHALL NOT be a horizontal extension parallel to the reference line.",
+      "pass_condition": "Arrow line meets one end of the continuous reference line at an obvious angle (typically ~135°/45°) and its arrowhead touches the visible joint line unambiguously.",
+      "fail_condition": "Arrow line runs collinear/parallel with the reference line, stops short of the joint line, or points to an ambiguous hidden line when a visible view is available.",
+      "remediation": "Angle the arrow line clearly (~135°) from one end of the continuous reference line and terminate the arrowhead directly on the visible joint line."
+    },
+    {
+      "rule_id": "ISO2553-04-023",
+      "citation_id": "ISO-2553-2019 4.6.2",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Multiple Arrow Lines",
+      "title": "Multiple Arrow Lines Permitted Only for Identical Welds",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Multiple Arrows",
+        "Identical Welds",
+        "Shared Reference Line"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Two or more arrow lines MAY be connected to a single reference line ONLY when all pointed-to joints require identical welds (same weld type, size, length, side significance, and complementary info).",
+      "pass_condition": "Every arrow line originating from the shared reference line points to a joint requiring the exact same weld specification.",
+      "fail_condition": "Multiple arrow lines from a single welding symbol point to joints having different plate thicknesses, different weld types, or conflicting arrow-side/other-side orientations.",
+      "remediation": "Split non-identical joints into separate welding symbols so multiple arrows reference only truly identical welds."
+    },
+    {
+      "rule_id": "ISO2553-04-024",
+      "citation_id": "ISO-2553-2019 4.6.3",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Broken Arrow Line",
+      "title": "Broken Arrow Line Mandatory to Identify Prepared Member in Asymmetrical Butt Joints",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Broken Arrow",
+        "Single-Bevel",
+        "Single-J",
+        "Steep-Flanked Bevel",
+        "Prepared Member"
+      ],
+      "audit_check": "[BOTH SYSTEMS] For asymmetrical butt welds where only one member receives edge preparation (single-bevel, single-bevel with broad root face, single-J, steep-flanked single-bevel, and flare-bevel where ambiguous), a BROKEN (kinked) arrow line SHALL be used pointing directly toward the specific joint member to be prepared (the break may be omitted ONLY when it is completely obvious which member must be prepared, e.g., the web of a T-joint).",
+      "pass_condition": "Asymmetrical single-bevel/single-J butt joints use a clearly kinked broken arrow pointing at the exact member to be beveled/grooved.",
+      "fail_condition": "A straight (unbroken) arrow points to a butt or corner joint with a single-bevel or single-J symbol where either of the two plates could be beveled.",
+      "remediation": "Replace the straight arrow with a broken (kinked) arrow pointing decisively toward the specific member requiring edge preparation."
+    },
+    {
+      "rule_id": "ISO2553-04-025",
+      "citation_id": "ISO-2553-2019 4.7.1",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Reference Line Orientation",
+      "title": "Reference Line Should Preferably Be Drawn Parallel to Bottom Edge of Drawing",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Horizontal Reference Line",
+        "Vertical Reference Line",
+        "Tilted Reference Line"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The reference line SHOULD preferably be drawn parallel to the bottom edge of the drawing (horizontal); if drawing space prevents horizontal placement, it may be drawn perpendicular to the bottom edge (vertical, readable from the right per ISO 129-1), and SHALL NOT be drawn at arbitrary oblique angles.",
+      "pass_condition": "Reference lines are drawn horizontally (or vertically readable from the right when space-constrained), never at arbitrary tilted angles.",
+      "fail_condition": "A welding symbol reference line is tilted at an oblique angle parallel to an inclined beam or flange.",
+      "remediation": "Reorient tilted reference lines horizontally parallel to the bottom edge of the drawing."
+    },
+    {
+      "rule_id": "ISO2553-04-026",
+      "citation_id": "ISO-2553-2019 4.7.1A",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "System A Dual Reference Line",
+      "title": "System A Dual Reference Line Consists of Continuous Line Plus Parallel Dashed Identification Line",
+      "system_applicability": "SYSTEM_A",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "System A",
+        "Dual Reference Line",
+        "Dashed Identification Line"
+      ],
+      "audit_check": "[SYSTEM A] In System A, the reference line SHALL consist of TWO parallel lines of equal length: one continuous (solid) line and one dashed (identification) line; the dashed line may be placed either below (preferable) or above the continuous line, and its relative position SHOULD be kept consistent throughout a drawing (omitted only for symmetrical double-sided welds per 4.4.3, basic symbols per 4.2, or centered welds with no side significance).",
+      "pass_condition": "All non-symmetrical System A welding symbols display both a continuous line and a parallel dashed line of matching length in a consistent orientation.",
+      "fail_condition": "A single-sided or asymmetrical weld on a System A drawing omits the dashed identification line, or flips the dashed line erratically above and below on the same sheet.",
+      "remediation": "Draw the System A dual reference line (continuous + parallel dashed line, consistently positioned) on all non-symmetrical welding symbols."
+    },
+    {
+      "rule_id": "ISO2553-04-027",
+      "citation_id": "ISO-2553-2019 4.7.1B",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "System B Single Reference Line",
+      "title": "System B Reference Line Consists Strictly of a Single Continuous Line",
+      "system_applicability": "SYSTEM_B",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "System B",
+        "Single Reference Line",
+        "Stray Dashed Line"
+      ],
+      "audit_check": "[SYSTEM B] In System B, the reference line SHALL consist strictly of a single continuous horizontal line; a dashed identification line SHALL NOT be drawn in System B.",
+      "pass_condition": "Every welding symbol on a System B drawing uses a single continuous reference line with zero dashed identification lines.",
+      "fail_condition": "A welding symbol on a System B drawing includes a dashed identification line.",
+      "remediation": "Remove the dashed identification line so all System B symbols use a single continuous reference line."
+    },
+    {
+      "rule_id": "ISO2553-04-028",
+      "citation_id": "ISO-2553-2019 4.7.2.2A",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "System A Arrow-Side vs. Other-Side Placement",
+      "title": "System A: Arrow-Side Symbol on Continuous Line; Other-Side Symbol on Dashed Line",
+      "system_applicability": "SYSTEM_A",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "System A",
+        "Continuous Line = Arrow Side",
+        "Dashed Line = Other Side"
+      ],
+      "audit_check": "[SYSTEM A] In System A, elementary symbols SHALL be placed on the CONTINUOUS line if the weld is on the arrow side of the joint, and on the DASHED identification line if the weld is on the other side of the joint (regardless of whether the dashed line sits below or above the continuous line).",
+      "pass_condition": "Arrow-side welds sit on the continuous line and other-side welds sit on the dashed line across all System A symbols.",
+      "fail_condition": "A System A drawing places an arrow-side weld on the dashed line (mistaking System B 'below = arrow side' when the dashed line is below the continuous line) or vice versa.",
+      "remediation": "Place arrow-side elementary symbols strictly on the continuous line and other-side symbols strictly on the dashed identification line in System A."
+    },
+    {
+      "rule_id": "ISO2553-04-029",
+      "citation_id": "ISO-2553-2019 4.7.2.2B",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "System B Arrow-Side vs. Other-Side Placement",
+      "title": "System B: Arrow-Side Symbol Below Reference Line; Other-Side Symbol Above Reference Line",
+      "system_applicability": "SYSTEM_B",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "System B",
+        "Below = Arrow Side",
+        "Above = Other Side"
+      ],
+      "audit_check": "[SYSTEM B] In System B, elementary symbols SHALL be placed BELOW the single reference line if the weld is on the arrow side of the joint, ABOVE the single reference line if the weld is on the other side, and on BOTH sides for double-sided welds (or centered on the reference line when no side significance exists, such as resistance spot/seam).",
+      "pass_condition": "Arrow-side welds sit below the single reference line, other-side welds sit above, and double-sided welds sit on both sides in System B.",
+      "fail_condition": "A System B drawing places an arrow-side weld above the single reference line (importing System A habit) or an other-side weld below.",
+      "remediation": "Place arrow-side symbols below and other-side symbols above the single reference line in System B."
+    },
+    {
+      "rule_id": "ISO2553-04-030",
+      "citation_id": "ISO-2553-2019 4.7.3",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Multiple Reference Lines",
+      "title": "Multiple Reference Lines Read Sequentially from Nearest-the-Arrow Outward",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Multiple Reference Lines",
+        "Operation Sequence",
+        "Nearest Arrow First"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When two or more reference lines are used on one arrow to specify a sequence of operations (e.g., first weld followed by back run, overlay, or NDT), the FIRST operation SHALL be placed on the reference line nearest the arrowhead, with subsequent operations on successive reference lines progressively farther away from the arrow.",
+      "pass_condition": "Stacked reference lines order physical operations chronologically from nearest-the-arrow (1st operation) outward (2nd, 3rd operations).",
+      "fail_condition": "A backing weld, root pass, or primary groove weld is placed farther from the arrow than a subsequent back run, overlay, or postweld NDT symbol.",
+      "remediation": "Reorder stacked reference lines so the first chronological operation lies on the reference line closest to the arrowhead."
+    },
+    {
+      "rule_id": "ISO2553-04-031",
+      "citation_id": "ISO-2553-2019 4.8",
+      "section": "Clause 4: Welding Symbol (Systems A/B, Elementary & Supplementary Symbols, Arrow, Reference Line, and Tail)",
+      "category": "Tail & Complementary Information",
+      "title": "Ordered Slash-Separated Sequence of Complementary Information in Tail (Open vs. Closed Tail)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Tail",
+        "Closed Tail",
+        "ISO 5817",
+        "ISO 4063",
+        "ISO 6947",
+        "Slash Separator"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The tail is omitted when no complementary information is needed; when used, complementary items SHOULD be separated by solidi ('/') in the ISO 2553 Clause 4.8 preferred sequence: (1) quality level (e.g., ISO 5817-B/C/D), (2) welding process reference number per ISO 4063 (e.g., 111, 135, 141), (3) filler material, (4) welding position (e.g., PA, PB per ISO 6947), and (5) supplementary info (WPS/NDT); a CLOSED tail box SHOULD be used specifically when referencing a documented instruction/WPS/note.",
+      "pass_condition": "Tail is clean, omitted when unused, separates multiple entries with '/', uses valid ISO 4063 numeric process codes (or agreed abbreviations), and uses a closed tail box when pointing to a specific WPS/note reference.",
+      "fail_condition": "Empty V-tail hangs off a symbol with an elementary weld glyph (not a 4.2 basic symbol), or tail mixes unseparated ambiguous codes.",
+      "remediation": "Omit unused tails on detailed welding symbols, separate multiple tail entries with '/' in Clause 4.8 order, and use a closed tail for specific instruction/WPS references."
+    },
+    {
+      "rule_id": "ISO2553-05-001",
+      "citation_id": "ISO-2553-2019 5.1",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "General Weld Dimensioning",
+      "title": "Weld Dimensions Placed on Same Side as Associated Elementary Symbol Using ISO 129-1 Units",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Dimension Side",
+        "ISO 129-1",
+        "Dual Units"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Weld dimensions SHALL be placed on the same side of the reference line as their associated elementary symbol (in System A: continuous line side vs. dashed line side; in System B: below vs. above) and SHALL use the drawing's ISO 129-1 measurement units without mixing dual unit systems inside the welding symbol.",
+      "pass_condition": "Every weld dimension sits on the same side of the reference line as its elementary symbol and uses a single consistent unit system matching the title block.",
+      "fail_condition": "Dimensions appear on the opposite side of the reference line from their elementary symbol, or dual inch/mm values appear inside the welding symbol.",
+      "remediation": "Move all weld dimensions to the same side as their elementary symbol and express them exclusively in the drawing's ISO 129-1 unit system."
+    },
+    {
+      "rule_id": "ISO2553-05-002",
+      "citation_id": "ISO-2553-2019 5.2",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Cross-Sectional Dimension Placement",
+      "title": "Main Cross-Sectional Dimensions Placed Strictly to the Left of Elementary Symbol",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Left of Symbol",
+        "Cross-Sectional Dimension",
+        "a z s d c"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Main cross-sectional dimensions (throat thickness 'a', leg length 'z', penetration depth 's', weld diameter 'd', weld width 'c') SHALL be placed to the LEFT of the elementary symbol regardless of whether the arrow connects to the left or right end of the reference line.",
+      "pass_condition": "All cross-sectional weld sizes appear immediately to the left of the elementary symbol.",
+      "fail_condition": "Cross-sectional weld size (e.g., a5, z6, s8) is placed to the right of the elementary symbol or mirrored when the arrow points right.",
+      "remediation": "Relocate all cross-sectional weld dimensions to the left of the elementary symbol."
+    },
+    {
+      "rule_id": "ISO2553-05-003",
+      "citation_id": "ISO-2553-2019 5.3.1",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Longitudinal Dimension Placement & Continuity Default",
+      "title": "Weld Length Placed Right of Symbol; Omission Defaults to Full Continuous Length",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "DEFAULT_INTERPRETATION",
+      "default_audit_severity": "question",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Right of Symbol",
+        "Length l",
+        "Full Length Default",
+        "Abrupt Direction Change"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Longitudinal weld length dimensions ('l') SHALL be placed to the RIGHT of the elementary symbol; in the absence of a length dimension to the right of the symbol, the weld is interpreted by default as CONTINUOUS over the entire length of the joint between abrupt changes in direction.",
+      "pass_condition": "Partial-length welds show 'l' to the right of the symbol (and locate extent on the drawing where non-obvious); omitted length genuinely corresponds to continuous full-length welding.",
+      "fail_condition": "Length 'l' is placed to the left of the symbol, or length is omitted when only a partial segment of the joint is meant to be welded.",
+      "remediation": "Place weld length 'l' to the right of the elementary symbol (with drawing location dimensions if partial), or confirm continuous full-length welding is intended."
+    },
+    {
+      "rule_id": "ISO2553-05-004",
+      "citation_id": "ISO-2553-2019 5.3.2.1A",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "System A Intermittent Weld Syntax",
+      "title": "System A Intermittent Weld Format: n × l (e) Where (e) Is Clear Spacing Between Elements",
+      "system_applicability": "SYSTEM_A",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "n x l (e)",
+        "Clear Space in Parentheses",
+        "System A Intermittent"
+      ],
+      "audit_check": "[SYSTEM A] In System A, intermittent welds SHALL be designated to the right of the elementary symbol as 'n × l (e)' (or 'l (e)' if number of elements is omitted), where 'n' is the number of weld elements, 'l' is the nominal length of each element, and '(e)' enclosed in parentheses is the CLEAR DISTANCE BETWEEN adjacent weld elements (NOT center-to-center pitch).",
+      "pass_condition": "System A intermittent weld uses 'n × l (e)' (e.g., 4 × 50 (100)) with clear spacing in parentheses and physically fits within the joint length.",
+      "fail_condition": "System A intermittent weld uses a hyphen pitch format (e.g., 50-150) instead of parentheses, omits '×', or puts center-to-center pitch inside parentheses where clear space '(e)' is expected.",
+      "remediation": "Format System A intermittent welds as 'n × l (e)' to the right of the symbol, verifying 'e' is the clear gap between weld elements."
+    },
+    {
+      "rule_id": "ISO2553-05-005",
+      "citation_id": "ISO-2553-2019 5.3.2.1B",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "System B Intermittent Weld Syntax",
+      "title": "System B Intermittent Weld Format: Length and Pitch Separated by Hyphen (l - p or n × l - p)",
+      "system_applicability": "SYSTEM_B",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "l - p",
+        "n x l - p",
+        "Hyphen Pitch",
+        "System B Intermittent"
+      ],
+      "audit_check": "[SYSTEM B] In System B, intermittent welds SHALL be designated to the right of the elementary symbol using length and center-to-center pitch separated by a hyphen ('l - p' or 'n × l - p', with pitch strictly greater than element length: p > l); System A parenthesized clear-space syntax '(e)' SHALL NOT be mixed into a System B drawing.",
+      "pass_condition": "System B intermittent weld shows element length and center-to-center pitch separated by a hyphen (e.g., 50-150 or 4 × 50-150) with p > l.",
+      "fail_condition": "System B intermittent weld uses System A '(e)' clear-space parentheses, lists pitch p <= l (impossible overlap), or uses an invalid separator such as '/' or '@'.",
+      "remediation": "Format System B intermittent welds to the right of the symbol as 'l - p' (or 'n × l - p') with center-to-center pitch p > l."
+    },
+    {
+      "rule_id": "ISO2553-05-006",
+      "citation_id": "ISO-2553-2019 5.3.2.2",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Chain Intermittent Welds",
+      "title": "Chain Intermittent Welds Shown Directly Opposite on Both Sides of Reference Line",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Chain Intermittent",
+        "Aligned Opposite Symbols",
+        "Both Sides"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Chain intermittent welds (weld elements lying directly opposite one another on each side of the joint, Clause 3.11.1) SHALL be represented by placing the elementary symbols directly opposite each other across the reference line with intermittent dimensions on both sides (deleting the dashed line in System A when symmetrical).",
+      "pass_condition": "Chain intermittent symbols align vertically opposite each other with complete intermittent dimensions shown on both sides.",
+      "fail_condition": "Chain intermittent weld omits dimensions on one side or accidentally adds a staggered 'Z' or horizontal offset.",
+      "remediation": "Align arrow-side and other-side elementary symbols vertically opposite each other and specify intermittent dimensions on both sides."
+    },
+    {
+      "rule_id": "ISO2553-05-007",
+      "citation_id": "ISO-2553-2019 5.3.2.3",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Staggered Intermittent Welds",
+      "title": "Staggered Intermittent Welds: 'Z' Across Reference Line (System A) vs. Offset Symbols (System B)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Staggered Intermittent",
+        "Z Across Reference Line",
+        "Offset Fillet Symbols"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Staggered intermittent welds (Clause 3.11.2) SHALL be indicated in System A by placing the staggered symbol 'Z' across the reference line (with elementary symbols opposite or staggered and dimensions on both sides), and in System B by offsetting the arrow-side and other-side elementary symbols horizontally relative to each other across the reference line with dimensions on both sides.",
+      "pass_condition": "System A staggered intermittent welds clearly display the 'Z' symbol across the reference line; System B staggered intermittent welds clearly offset the upper and lower elementary symbols horizontally.",
+      "fail_condition": "Staggered intermittent welds align symbols directly opposite with no 'Z' (relying only on a text note 'STAGGERED'), or omit dimensions on one side.",
+      "remediation": "Use the 'Z' across the reference line in System A or horizontally offset the opposite-side symbols in System B, with dimensions on both sides."
+    },
+    {
+      "rule_id": "ISO2553-05-008",
+      "citation_id": "ISO-2553-2019 5.4.1",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Butt Weld Penetration Depth",
+      "title": "Partial-Penetration Butt Welds Require Penetration Depth 's' to the Left of Symbol",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "s",
+        "Penetration Depth",
+        "Partial Penetration Butt Weld",
+        "Table 6 No. 1.1"
+      ],
+      "audit_check": "[BOTH SYSTEMS] For partial-penetration butt welds, the required penetration depth SHALL be indicated to the left of the elementary symbol preceded by the letter 's' (e.g., s8); in the absence of 's' (or WPS reference), the butt weld is full penetration (Table 1 Note b).",
+      "pass_condition": "Every partial-penetration butt weld displays 's<value>' immediately to the left of the elementary butt weld symbol, with 's' physically less than the base-metal thickness.",
+      "fail_condition": "Partial-penetration butt weld omits prefix 's' (leaving an ambiguous bare number), places 's' to the right, or specifies 's' greater than or equal to plate thickness.",
+      "remediation": "Specify partial-penetration butt weld depth to the left of the symbol preceded by 's' (e.g., s6) and verify 's' is physically compatible with base plate thickness."
+    },
+    {
+      "rule_id": "ISO2553-05-009",
+      "citation_id": "ISO-2553-2019 5.4.2",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Double-Sided Butt Weld Dimensioning",
+      "title": "Independent Dimensioning of Both Sides on Double-Sided Butt Welds",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Double-Sided Butt",
+        "s1 / s2",
+        "Asymmetrical Penetration"
+      ],
+      "audit_check": "[BOTH SYSTEMS] For double-sided partial-penetration butt welds, penetration depth 's' SHALL be indicated independently on EACH side of the reference line (Table 6 No. 1.2); the sum of arrow-side and other-side penetration depths SHALL be consistent with joint thickness (leaving an intended root land for partial penetration, or omitting 's' on both sides for full penetration).",
+      "pass_condition": "Double-sided partial-penetration butt welds show 's' on both sides of the reference line with physically valid combined penetration depth.",
+      "fail_condition": "A double-sided partial-penetration butt weld specifies 's' on only one side, leaving the opposite side defaulting to full penetration and contradicting the joint design.",
+      "remediation": "Specify penetration depth 's' on both sides of the reference line for double-sided partial-penetration butt welds."
+    },
+    {
+      "rule_id": "ISO2553-05-010",
+      "citation_id": "ISO-2553-2019 5.4.3",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Flanged Butt Welds",
+      "title": "Flanged Butt Weld Dimensioning (Penetration Depth 's' Left of Symbol)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Flanged Butt",
+        "Table 6 No. 1.5",
+        "s"
+      ],
+      "audit_check": "[BOTH SYSTEMS] For flanged butt welds where minimum penetration depth / weld thickness is required (Table 6 No. 1.5), penetration depth 's' SHALL be shown to the left of the elementary symbol, while flange heights and bend radii SHALL be dimensioned on the drawing view.",
+      "pass_condition": "Flanged butt weld shows 's' to the left when required and dimensions flange geometry directly on the part drawing.",
+      "fail_condition": "Flange height or bend radius is placed inside the welding symbol, or 's' is omitted on a partial-penetration flanged butt joint.",
+      "remediation": "Place required penetration depth 's' to the left of the symbol and dimension all flange radii/heights on the drawing."
+    },
+    {
+      "rule_id": "ISO2553-05-011",
+      "citation_id": "ISO-2553-2019 5.4.4",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Flare-V & Flare-Bevel Butt Welds",
+      "title": "Flare-Bevel and Flare-V Butt Welds Always Require Penetration Depth 's'",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Flare-V",
+        "Flare-Bevel",
+        "s",
+        "Table 6 No. 1.6",
+        "Table 6 No. 1.7"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Flare-V butt welds (Table 6 No. 1.6) and flare-bevel butt welds (Table 6 No. 1.7) SHALL always be dimensioned by specifying the required penetration depth 's' to the left of the elementary symbol (measured from the tangent surface of the curved member), because full penetration is generally not attainable along curved flare surfaces.",
+      "pass_condition": "Every flare-V and flare-bevel weld specifies a physically realistic penetration depth 's' (less than the curved member's outer bend radius) to the left of the symbol.",
+      "fail_condition": "A flare-V or flare-bevel weld omits 's' (implying unattainable full penetration) or specifies 's' larger than the physical bend radius of the hollow section/round bar.",
+      "remediation": "Specify a realistic penetration depth 's' to the left of every flare-V and flare-bevel butt weld symbol."
+    },
+    {
+      "rule_id": "ISO2553-05-012",
+      "citation_id": "ISO-2553-2019 5.5.1",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Fillet Weld Sizing Prefixes",
+      "title": "Fillet Weld Size Must Be Preceded by 'a' (Throat) or 'z' (Leg); Unequal Legs Must Use 'z1 × z2'",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "a",
+        "z",
+        "z1 x z2",
+        "Bare Fillet Size",
+        "Table 6 Nos. 2.1 & 2.3"
+      ],
+      "audit_check": "[BOTH SYSTEMS] The cross-sectional size of a fillet weld placed to the left of the fillet weld symbol SHALL be preceded by either 'a' (nominal throat thickness, e.g., a5) or 'z' (leg length, e.g., z7) — bare unprefixed numbers SHALL NOT be used on ISO 2553 fillet welds; for UNEQUAL-LEG fillet welds, leg lengths SHALL be specified as 'z1 × z2' (e.g., z4 × 6) with leg orientation clearly indicated on the drawing, and prefix 'a' SHALL NOT be used.",
+      "pass_condition": "Equal-leg fillet welds carry an explicit 'a' or 'z' prefix (never both inconsistently on the same weld without reason); unequal-leg fillet welds use 'z1 × z2' and unambiguously show which leg lies on which member.",
+      "fail_condition": "Fillet weld size has no 'a'/'z' prefix (AWS-style bare number like '6' on an ISO 2553 drawing), uses 'a' on an unequal-leg fillet weld, or specifies 'z4 × 6' without indicating leg orientation.",
+      "remediation": "Prefix equal-leg fillet weld sizes with 'a' or 'z', and specify unequal-leg fillet welds as 'z1 × z2' with an orientation sketch/note on the drawing."
+    },
+    {
+      "rule_id": "ISO2553-05-013",
+      "citation_id": "ISO-2553-2019 5.5.2",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Deep Penetration Fillet Welds",
+      "title": "Deep Penetration Fillet Welds Must Specify Both 's' (Deep Throat) and 'a' (Nominal Throat)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "s",
+        "a",
+        "Deep Penetration Fillet",
+        "Table 6 No. 2.2"
+      ],
+      "audit_check": "[BOTH SYSTEMS] For deep penetration fillet welds (Clause 3.19, Table 6 No. 2.2), the deep penetration throat thickness SHALL be preceded by the letter 's' placed ahead of the nominal throat thickness 'a' to the left of the fillet weld symbol (e.g., s8 a6), with s > a.",
+      "pass_condition": "Deep penetration fillet weld shows both 's' and 'a' to the left of the fillet symbol (e.g., s8 a6) with s > a.",
+      "fail_condition": "Deep penetration fillet weld omits 's' or 'a', reverses values so s <= a, or uses 'z' inconsistently without clarifying deep penetration throat.",
+      "remediation": "Specify both deep penetration throat 's' and nominal throat 'a' (with s > a) to the left of the fillet weld symbol (e.g., s8 a6)."
+    },
+    {
+      "rule_id": "ISO2553-05-014",
+      "citation_id": "ISO-2553-2019 5.6",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Plug Welds in Circular Holes",
+      "title": "Circular Plug Weld Sizing (Ød Left, Partial Depth Inside) and Prohibition for Fillet Welds in Holes",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "PLUG_WELD",
+        "FILLET_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Plug Weld",
+        "Ød",
+        "Depth of Filling",
+        "Fillet Weld in Hole",
+        "Table 6 No. 3.1"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Plug welds in circular holes (Table 6 No. 3.1) SHALL indicate hole diameter at the faying surface preceded by 'Ø' (Ød) to the left of the plug symbol, partial depth of filling inside the symbol (omission = complete fill), and spacing/pitch to the right; the plug weld symbol SHALL NOT be used to designate perimeter fillet welds inside circular holes (use the fillet weld symbol with weld-all-around instead).",
+      "pass_condition": "Circular plug weld displays Ød to the left, partial fill depth inside if < full thickness, spacing to the right, and is used only for true plug welds (never perimeter fillets in holes).",
+      "fail_condition": "Plug weld omits 'Ø' before diameter, places fill depth outside the symbol, or misuses the plug symbol for a perimeter fillet weld inside a circular hole.",
+      "remediation": "Prefix circular plug diameter with 'Ø' to the left, place any partial fill depth inside the symbol, and replace misused plug symbols with fillet weld symbols for perimeter-welded holes."
+    },
+    {
+      "rule_id": "ISO2553-05-015",
+      "citation_id": "ISO-2553-2019 5.7",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Plug Welds in Elongated Holes (Slots)",
+      "title": "Slot Plug Weld Sizing (Width c Left Without Ø, Length Right) and Prohibition for Fillet Welds in Slots",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "SLOT_WELD",
+        "FILLET_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Slot Weld",
+        "Elongated Hole",
+        "Width c",
+        "No Ø",
+        "Table 6 No. 3.2"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Plug welds in elongated holes/slots (Table 6 No. 3.2, clarified in ISO 2553:2019) SHALL show slot width 'c' (at faying surface, WITHOUT 'Ø') to the left of the plug symbol, slot length 'l' (or intermittent count/spacing) to the right, partial fill depth inside (omission = complete fill), and slot position/orientation on the drawing; the plug symbol SHALL NOT be used to represent fillet welds around the inside perimeter of a slot.",
+      "pass_condition": "Slot plug weld shows width 'c' (no Ø) on left, length 'l' on right, optional partial fill depth inside, explicit orientation on drawing, and is not used for perimeter fillet welds in slots.",
+      "fail_condition": "Slot plug weld erroneously prefixes width with 'Ø', omits length or drawing orientation, or misuses the plug symbol for a fillet weld in a slot.",
+      "remediation": "Specify slot width (without Ø) on the left, slot length on the right, orient/locate slots on the drawing, and use a fillet weld symbol if perimeter fillet welding is intended."
+    },
+    {
+      "rule_id": "ISO2553-05-016",
+      "citation_id": "ISO-2553-2019 5.8",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Spot Welds",
+      "title": "Spot Weld Dimensioning (Diameter d Left, Count/Spacing Right, Process in Tail)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "SPOT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Spot Weld",
+        "Diameter d",
+        "n x (e)",
+        "n - p",
+        "Table 6 Nos. 4.1 & 4.2"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Spot welds (resistance spot, projection, and fusion spot — Table 6 Nos. 4.1 & 4.2) SHALL specify weld nugget diameter 'd' at the faying surface (or minimum shear strength if specified) to the left of the symbol, number and spacing/pitch ('n × (e)' in System A; 'n - p' or pitch in System B) to the right, and the welding process (e.g., ISO 4063 21, 23, 141) in the tail.",
+      "pass_condition": "Spot weld shows diameter 'd' on left, spacing/count on right in the active system's syntax, and process designation in the tail (or general notes).",
+      "fail_condition": "Spot weld omits nugget diameter/strength, omits process identification, or mixes System A/B spacing syntax.",
+      "remediation": "Specify spot diameter 'd' to the left, count/spacing to the right per the active system, and the ISO 4063 process code in the tail."
+    },
+    {
+      "rule_id": "ISO2553-05-017",
+      "citation_id": "ISO-2553-2019 5.9",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Seam Welds",
+      "title": "Seam Weld Dimensioning (Width c Left, Length/Intermittent Right, Process in Tail)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "SEAM_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Seam Weld",
+        "Width c",
+        "Table 6 No. 5"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Seam welds (resistance seam and fusion seam — Table 6 No. 5) SHALL show weld width 'c' at the faying surface to the left of the seam weld symbol, length or intermittent dimensions to the right (omitted = full continuous length), and the welding process (e.g., ISO 4063 22, 52, 141) in the tail.",
+      "pass_condition": "Seam weld specifies faying-surface width 'c' on the left, appropriate length/intermittent format on the right, and process in the tail.",
+      "fail_condition": "Seam weld places width to the right, omits process reference, or fails to dimension partial seam extent on the drawing.",
+      "remediation": "Place seam width 'c' to the left of the seam symbol, length/intermittent spacing to the right, and the process code in the tail."
+    },
+    {
+      "rule_id": "ISO2553-05-018",
+      "citation_id": "ISO-2553-2019 5.10",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Edge Welds",
+      "title": "Edge Weld Dimensioning (Weld Thickness / Penetration Depth 's' Left, Length Right)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "EDGE_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Edge Weld",
+        "s",
+        "Table 6 No. 6"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Edge welds (Table 6 No. 6) SHALL indicate weld thickness / penetration depth preceded by 's' to the left of the edge weld symbol and weld length (or intermittent dimensions) to the right.",
+      "pass_condition": "Edge weld displays 's<value>' to the left of the symbol and length/intermittent notation to the right when not continuous full length.",
+      "fail_condition": "Edge weld omits 's' prefix or places weld thickness to the right of the edge weld symbol.",
+      "remediation": "Specify edge weld penetration depth 's' to the left of the edge weld symbol and any length/intermittent specs to the right."
+    },
+    {
+      "rule_id": "ISO2553-05-019",
+      "citation_id": "ISO-2553-2019 5.11",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Stud Welds",
+      "title": "Stud Weld Dimensioning (Diameter d Left, Count/Spacing Right, Arrow-Side Only)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "STUD_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Stud Weld",
+        "d",
+        "Arrow Side Only",
+        "Table 6 No. 7"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Stud welds (Table 6 No. 7) have arrow-side significance ONLY (continuous line in System A; below reference line in System B), SHALL specify stud diameter 'd' to the left of the symbol, count and spacing/pitch to the right, and exact first/last stud locations on the drawing.",
+      "pass_condition": "Stud weld symbol sits on the arrow side with stud diameter 'd' left, count/spacing right, and start/end stud locations dimensioned on the drawing.",
+      "fail_condition": "Stud weld symbol is placed on the other side of the reference line, omits diameter 'd', or fails to locate the stud row on the drawing.",
+      "remediation": "Place the stud weld symbol strictly on the arrow side, show diameter 'd' on the left, spacing/count on the right, and dimension stud locations on the drawing."
+    },
+    {
+      "rule_id": "ISO2553-05-020",
+      "citation_id": "ISO-2553-2019 5.12",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Overlay (Surfacing) Welds",
+      "title": "Overlay Weld Dimensioning (Deposit Thickness Left, Arrow-Side Only, Extent on Drawing)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": true,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "SURFACING_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Overlay Weld",
+        "Deposit Thickness",
+        "Arrow Side Only",
+        "Table 6 No. 8"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Overlay (surfacing) welds (Table 6 No. 8) have arrow-side significance ONLY (continuous line in System A; below reference line in System B), SHALL show minimum deposit thickness (e.g., 's' or thickness dimension per Table 6 No. 8) to the left of the overlay symbol, and SHALL dimension partial overlay area extent and required weld direction on the drawing or tail.",
+      "pass_condition": "Overlay weld symbol sits on the arrow side with minimum thickness to the left and partial surfaced zone clearly bounded and dimensioned on the drawing.",
+      "fail_condition": "Overlay symbol is placed on the other side of the reference line or points to a partial face without boundary dimensions.",
+      "remediation": "Place the overlay weld symbol on the arrow side, specify minimum thickness to the left, and bound/dimension any partial overlay area on the drawing."
+    },
+    {
+      "rule_id": "ISO2553-05-021",
+      "citation_id": "ISO-2553-2019 5.13",
+      "section": "Clause 5: Dimensioning of Welds (and Table 6)",
+      "category": "Stake Welds",
+      "title": "Stake Weld Dimensioning (Interface Width c Left, Length Right, Laser/EB Process in Tail)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "STAKE_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Stake Weld",
+        "Width c",
+        "Laser 52",
+        "Electron Beam 51",
+        "Table 6 No. 9"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Stake welds (Table 6 No. 9) SHALL indicate required weld width 'c' at the flange-to-web interface to the left of the stake weld symbol, length or intermittent dimensions to the right, and the laser (52) or electron beam (51) process in the tail, with the arrow pointing to the irradiated flange side.",
+      "pass_condition": "Stake weld shows interface width 'c' left, length/intermittent specs right, laser/EB process in tail, and arrow contacting the irradiated flange surface.",
+      "fail_condition": "Stake weld omits interface width 'c', omits process code, or points to the underside of the web instead of the irradiated flange face.",
+      "remediation": "Specify interface width 'c' to the left, length/spacing to the right, process 51 or 52 in the tail, and point the arrow to the irradiated flange surface."
+    },
+    {
+      "rule_id": "ISO2553-06-001",
+      "citation_id": "ISO-2553-2019 6.1",
+      "section": "Clause 6: Dimensioning of Joint Preparations",
+      "category": "Joint Preparation Dimensioning",
+      "title": "Joint Preparation Dimensions on Welding Symbol Harmonized with Pacific Rim / System B Practices",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Joint Preparation",
+        "ISO 9692",
+        "Clause 6"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Joint preparation dimensions (root gap b, included angle α, depth of preparation h, countersink angle β) MAY be shown on the welding symbol per Clause 6 (revised in 2019 to harmonize System B/Pacific Rim practices) or referenced via WPS / ISO 9692; when included on the symbol, they SHALL occupy exact Clause 6 locations without colliding with weld size dimensions.",
+      "pass_condition": "Joint preparation dimensions either appear cleanly in exact Clause 6 symbol positions or are cleanly delegated to a referenced ISO 9692 / WPS specification.",
+      "fail_condition": "Joint preparation dimensions are placed arbitrarily around the symbol where they can be confused with weld penetration depth 's' or weld length 'l'.",
+      "remediation": "Place joint preparation dimensions strictly in Clause 6 standard positions or reference an ISO 9692 joint preparation / WPS in the tail."
+    },
+    {
+      "rule_id": "ISO2553-06-002",
+      "citation_id": "ISO-2553-2019 6.2",
+      "section": "Clause 6: Dimensioning of Joint Preparations",
+      "category": "Root Gap",
+      "title": "Root Gap 'b' Placed Inside Elementary Symbol (One Side Only for Double-Sided Joints)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Root Gap b",
+        "Inside Symbol",
+        "Double-Sided Root Gap"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When specified on the welding symbol, the root gap 'b' SHALL be placed INSIDE the elementary symbol (between the parallel lines of a square butt or at the root vertex of V/bevel/U/J symbols); for double-sided butt welds, the root gap SHALL be shown on ONE side only (never duplicated on both sides).",
+      "pass_condition": "Root gap 'b' is clearly placed inside the elementary symbol, appearing on only one side for double-sided butt welds.",
+      "fail_condition": "Root gap is placed outside the elementary symbol (e.g., to the left where it mimics penetration depth) or repeated on both sides of a double-V/double-bevel symbol.",
+      "remediation": "Place root gap 'b' cleanly inside the elementary symbol, and on one side only for double-sided butt welds."
+    },
+    {
+      "rule_id": "ISO2553-06-003",
+      "citation_id": "ISO-2553-2019 6.3",
+      "section": "Clause 6: Dimensioning of Joint Preparations",
+      "category": "Included Groove Angle",
+      "title": "Included Angle 'α' Placed Above or Below Elementary Symbol (Opening Side)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Included Angle α",
+        "Groove Angle",
+        "Bevel Angle",
+        "Degree Symbol"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When specified on the welding symbol, the included groove angle 'α' (or bevel angle for single-bevel/single-J) SHALL be placed directly above or below (in the open mouth of) the elementary symbol on the same side of the reference line, with the degree symbol (°).",
+      "pass_condition": "Included groove angle (e.g., 60°, 45°) is placed cleanly inside/outside the open flare of the V/bevel/U/J symbol with a degree sign.",
+      "fail_condition": "Groove angle is placed to the left or right of the symbol, omits the degree symbol, or states a single-wall half-angle on a symmetrical V-groove without clarification.",
+      "remediation": "Place the included groove angle 'α' (with '°') directly in/at the opening of the elementary symbol on the same side of the reference line."
+    },
+    {
+      "rule_id": "ISO2553-06-004",
+      "citation_id": "ISO-2553-2019 6.4",
+      "section": "Clause 6: Dimensioning of Joint Preparations",
+      "category": "U- and J-Butt Root Radius & Root Face",
+      "title": "Root Radius 'R' and Depth of Root Face 'c' for U and J Butt Joints Specified via Cross-Section or WPS",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD",
+        "2D_ORTHOGRAPHIC"
+      ],
+      "visual_syntax_triggers": [
+        "Root Radius R",
+        "Root Face c",
+        "U-Butt",
+        "J-Butt",
+        "Cross-Section"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Root radius 'R' and depth of root face 'c' for single- or double-U and J butt joints SHALL NOT be crammed ambiguously into the welding symbol; they SHALL be specified via a detailed cross-section drawing of the joint preparation or by reference to a governing standard (e.g., ISO 9692) / WPS in the tail.",
+      "pass_condition": "U- and J-butt joint root radius 'R' and root face 'c' are clearly defined in a cross-section view or referenced ISO 9692 / WPS document.",
+      "fail_condition": "U- or J-butt welding symbol omits root radius and root face everywhere on the drawing and has no ISO 9692 or WPS reference, or clutters the symbol with non-standard 'R'/'c' annotations.",
+      "remediation": "Provide a dimensioned cross-section detail view showing root radius 'R' and root face 'c', or reference an ISO 9692 / WPS joint preparation in the tail."
+    },
+    {
+      "rule_id": "ISO2553-06-005",
+      "citation_id": "ISO-2553-2019 6.5",
+      "section": "Clause 6: Dimensioning of Joint Preparations",
+      "category": "Depth of Joint Preparation",
+      "title": "Depth of Joint Preparation 'h' vs. Penetration Depth 's' (Parenthesized Distinction)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Depth of Preparation h",
+        "h(s)",
+        "Parentheses",
+        "System B Pacific Rim"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When depth of joint preparation 'h' is specified on the welding symbol (Clause 6.5, harmonized with System B / Pacific Rim conventions), it SHALL be placed to the left of the elementary symbol, and whenever BOTH depth of preparation and effective penetration depth are specified together, penetration depth SHALL be enclosed in parentheses immediately following depth of preparation (e.g., '10(12)' in System B, or clearly prefixed with 's' vs. 'h' so bevel depth and effective weld penetration cannot be confused).",
+      "pass_condition": "Depth of preparation and effective weld penetration depth are unambiguously distinguished via parentheses or explicit prefixes/cross-section detail.",
+      "fail_condition": "A bare unprefixed number to the left of a groove symbol creates ambiguity between bevel depth 'h' and effective penetration depth 's'.",
+      "remediation": "Distinguish bevel preparation depth from penetration depth using Clause 6.5 syntax (depth outside parentheses, effective penetration inside parentheses, or explicit 's' prefix / detail view)."
+    },
+    {
+      "rule_id": "ISO2553-06-006",
+      "citation_id": "ISO-2553-2019 6.6",
+      "section": "Clause 6: Dimensioning of Joint Preparations",
+      "category": "Plug Weld Countersink Angle",
+      "title": "Countersink Included Angle 'β' Placed Above or Below Plug Weld Symbol",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "PLUG_WELD",
+        "SLOT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Countersink Angle β",
+        "Plug Countersink",
+        "Degree Symbol"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When circular or elongated-hole (slot) plug welds have countersunk sides, the included countersink angle 'β' (with '°') SHALL be placed directly above or below the plug weld symbol on the same side of the reference line.",
+      "pass_condition": "Included countersink angle (e.g., 45°, 60°) sits cleanly above/below the plug weld symbol on the same side of the reference line.",
+      "fail_condition": "Countersink angle is placed inside the plug symbol (conflicting with fill depth) or omitted when a section view shows a tapered hole.",
+      "remediation": "Place the included countersink angle 'β' (with '°') directly above or below the plug weld symbol on the same side of the reference line."
+    },
+    {
+      "rule_id": "ISO2553-07-001",
+      "citation_id": "ISO-2553-2019 7.1",
+      "section": "Clause 7: Alternative Butt Weld Symbol with Required Weld Quality (and Table 7)",
+      "category": "Alternative Quality-Based Designation",
+      "title": "Alternative Butt Weld Designation Specifies Essential Design Info (Dimensions & Quality Level) Leaving Prep to Production",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Clause 7",
+        "Alternative Butt Weld",
+        "ISO 5817-B",
+        "ISO 5817-C",
+        "ISO 5817-D",
+        "ISO 10042",
+        "Table 7"
+      ],
+      "audit_check": "[BOTH SYSTEMS] When the Clause 7 alternative butt weld designation method (Table 7) is used to leave joint preparation geometry and welding process to the production unit, the welding symbol SHALL explicitly specify all essential design requirements: the required penetration (full penetration by default or 's' for partial), contour/supplementary requirements if needed, and the required weld quality level (e.g., ISO 5817-B, C, or D for steel; ISO 10042 for aluminium) in the tail or general notes.",
+      "pass_condition": "Alternative butt weld callout includes the required penetration/dimensions AND explicitly cites a weld quality standard and level (e.g., ISO 5817-C) in the tail or general drawing notes.",
+      "fail_condition": "Drawing omits butt joint preparation geometry under Clause 7 without specifying any weld quality level (ISO 5817 / ISO 10042) or penetration requirement.",
+      "remediation": "Specify the required weld quality level (e.g., ISO 5817-B/C/D) in the tail or general notes whenever using the Clause 7 alternative butt weld designation."
+    },
+    {
+      "rule_id": "ISO2553-07-002",
+      "citation_id": "ISO-2553-2019 7.2",
+      "section": "Clause 7: Alternative Butt Weld Symbol with Required Weld Quality (and Table 7)",
+      "category": "Alternative Butt Weld Syntax",
+      "title": "Proper Syntax for Alternative Butt Weld Symbol in System A vs. System B (Table 7)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Table 7",
+        "Square Butt / General Butt",
+        "Quality Level in Tail"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Clause 7.2 and Table 7, alternative butt weld symbols SHOULD follow the active system's reference line convention (System A or System B) and avoid simultaneously prescribing a conflicting specific bevel/U/J joint preparation when the intent is to allow production-selected preparation.",
+      "pass_condition": "Alternative butt weld callout cleanly conveys design requirements (penetration, contour, quality level) without contradicting itself with arbitrary edge-prep dimensions.",
+      "fail_condition": "Welding symbol mixes Clause 7 'production choice' notes with rigid, contradictory bevel/root-gap dimensions.",
+      "remediation": "Either specify complete joint preparation per Clause 6 OR use the clean Clause 7 quality-level designation without conflicting edge-prep dimensions."
+    },
+    {
+      "rule_id": "ISO2553-AX-001",
+      "citation_id": "ISO-2553-2019 Annex A Figure A.1",
+      "section": "Annexes A, B & C: Element Location Maps, Weld Type Transitions, and Alternative Intermittent Designations",
+      "category": "Comprehensive Element Location Validation",
+      "title": "Strict Adherence to Figure A.1 Comprehensive Welding Symbol Element Location Map",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHALL_MANDATORY",
+      "default_audit_severity": "major",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL"
+      ],
+      "visual_syntax_triggers": [
+        "Figure A.1",
+        "Element Location Map",
+        "System A Layout",
+        "System B Layout"
+      ],
+      "audit_check": "[BOTH SYSTEMS] All elements of a comprehensive welding symbol (cross-sectional size left, elementary symbol center, length/intermittent right, contour/angle above or below, all-around/field flag at arrow-reference junction, complementary info in tail) SHALL match the exact Figure A.1 layout for the active system (System A dual reference line vs. System B single reference line).",
+      "pass_condition": "Every element of complex welding symbols occupies its exact Figure A.1 slot for the active system.",
+      "fail_condition": "Elements are transposed (e.g., length on left, size on right, field flag at tail, or contour symbol detached from the elementary symbol).",
+      "remediation": "Relocate all welding symbol elements to match ISO 2553 Figure A.1 for the drawing's declared system."
+    },
+    {
+      "rule_id": "ISO2553-AX-002",
+      "citation_id": "ISO-2553-2019 Annex B Table B.1",
+      "section": "Annexes A, B & C: Element Location Maps, Weld Type Transitions, and Alternative Intermittent Designations",
+      "category": "Weld Type Angular Transition Points",
+      "title": "Angular Transition Points Between Butt Welds, Edge Welds, and Fillet Welds (Table B.1)",
+      "system_applicability": "BOTH_SYSTEMS",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD",
+        "BUTT_WELD",
+        "EDGE_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Table B.1",
+        "Transition Point",
+        "Skewed Fillet",
+        "60° to 120°",
+        "Obtuse/Acute Joint"
+      ],
+      "audit_check": "[BOTH SYSTEMS] Per Annex B Table B.1, drawings SHOULD respect standard angular transition boundaries between weld types: butt welds apply to aligned/near-aligned members (typically ≤ 5° angular deviation), edge welds apply to parallel/near-parallel edge members (typically ≤ 5°), and standard fillet welds apply to T-/corner/lap angles between 60° and 120° (dihedral angles < 60° or > 120° require skewed-joint cross-sections, groove-weld treatment, or explicit throat/Z-factor clarification).",
+      "pass_condition": "Standard fillet weld symbols are applied to 60°–120° dihedral joints; skewed joints (< 60° or > 120°) include cross-sectional weld details or explicit throat/bevel clarification.",
+      "fail_condition": "A standard 'a5' fillet weld symbol is applied to an acute (< 60°) or highly obtuse (> 120°) skewed joint without a cross-section detail or effective throat verification.",
+      "remediation": "For joints outside the Table B.1 standard transition angles (e.g., dihedral angle < 60° or > 120°), add a dimensioned cross-section view or redesign as a partial/full penetration bevel groove weld."
+    },
+    {
+      "rule_id": "ISO2553-AX-003",
+      "citation_id": "ISO-2553-2019 Annex C Table C.1",
+      "section": "Annexes A, B & C: Element Location Maps, Weld Type Transitions, and Alternative Intermittent Designations",
+      "category": "System A Alternative Intermittent Designations",
+      "title": "System A Alternative Intermittent Designations (Continuous Ends, Pitch Spec, and Staggered Offset — Table C.1)",
+      "system_applicability": "SYSTEM_A",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Table C.1",
+        "Offset",
+        "Intermittent End Segments",
+        "System A"
+      ],
+      "audit_check": "[SYSTEM A] Per Annex C (Clause C.2 & Table C.1 Nos. 1–3), when intermittent butt or fillet welds in System A require specific start/end offsets, explicit staggered offset distance (Clause 3.12), or combined continuous end welds, those boundary dimensions SHOULD be explicitly shown via Annex C notation or dimension lines on the drawing.",
+      "pass_condition": "Non-standard intermittent start/end segments or staggered offsets in System A are explicitly dimensioned per Table C.1.",
+      "fail_condition": "A staggered or end-constrained intermittent weld in System A leaves the starting offset or continuous end segment undimensioned.",
+      "remediation": "Add explicit offset and end-segment dimensions on the drawing in accordance with ISO 2553 Annex C Table C.1."
+    },
+    {
+      "rule_id": "ISO2553-AX-004",
+      "citation_id": "ISO-2553-2019 Annex C Table C.2",
+      "section": "Annexes A, B & C: Element Location Maps, Weld Type Transitions, and Alternative Intermittent Designations",
+      "category": "System B Alternative Intermittent Designations",
+      "title": "System B Alternative Intermittent Designations (Count, Pitch, and Staggered Offset — Table C.2)",
+      "system_applicability": "SYSTEM_B",
+      "enforcement_level": "SHOULD_RECOMMENDED",
+      "default_audit_severity": "minor",
+      "is_forbidden_or_deprecated": false,
+      "applies_to": [
+        "WELDING_SYMBOL",
+        "FILLET_WELD",
+        "BUTT_WELD"
+      ],
+      "visual_syntax_triggers": [
+        "Table C.2",
+        "Offset",
+        "Pitch",
+        "System B"
+      ],
+      "audit_check": "[SYSTEM B] Per Annex C (Clause C.3 & Table C.2 Nos. 1–3), when intermittent butt or fillet welds in System B require specific element counts, start/end weld segments, or explicit staggered offset distances (Clause 3.12), the exact geometry SHOULD be indicated per Table C.2 or dimensioned directly on the drawing.",
+      "pass_condition": "Intermittent end conditions and staggered offsets in System B are clearly dimensioned per Table C.2.",
+      "fail_condition": "Staggered or interrupted intermittent welds in System B leave start/end offsets ambiguous around cutouts or plate ends.",
+      "remediation": "Specify explicit start/end segment lengths and staggered offsets per ISO 2553 Annex C Table C.2."
+    }
+  ]
+}

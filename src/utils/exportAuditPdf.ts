@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import {
   PRIORITY_META,
   PRIORITY_ORDER,
+  isWeldingFinding,
   type AuditFinding,
   type AuditPriority,
   type DrawingAuditReport,
@@ -407,53 +408,109 @@ export function exportAuditReportToPdf(report: DrawingAuditReport, originalFileN
     cursorY = startY + blockHeight + 3.5;
   };
 
-  for (const priority of PRIORITY_ORDER) {
-    const meta = PRIORITY_META[priority];
-    const palette = PRIORITY_PALETTE[priority];
-    const groupItems = report.findings.filter((f) => f.priority === priority);
-
-    // Section heading band (ensure at least header + one line/item fits)
-    const sectionBandHeight = 12.5;
-    ensureSpace(sectionBandHeight + 18);
-
-    doc.setFillColor(...palette.tint);
-    doc.setDrawColor(...palette.border);
-    doc.setLineWidth(0.35);
-    doc.roundedRect(marginX, cursorY, contentWidth, sectionBandHeight, 1.8, 1.8, 'FD');
+  const renderSectionBanner = (title: string, subtitle: string, count: number) => {
+    const bannerH = 11;
+    ensureSpace(bannerH + 22);
+    doc.setFillColor(...COLORS.headerBg);
+    doc.roundedRect(marginX, cursorY, contentWidth, bannerH, 1.5, 1.5, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(...palette.accent);
-    doc.text(
-      sanitizePdfText(`${meta.headingLabel}   (${groupItems.length})`),
-      marginX + 4.5,
-      cursorY + 5.5,
-    );
+    doc.setFontSize(9.5);
+    doc.setTextColor(...COLORS.white);
+    doc.text(sanitizePdfText(title), marginX + 4.5, cursorY + 5);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.6);
-    doc.setTextColor(...COLORS.muted);
-    const defLines = doc.splitTextToSize(sanitizePdfText(meta.definition), contentWidth - 9) as string[];
-    doc.text(defLines[0] ?? '', marginX + 4.5, cursorY + 10.2);
+    doc.setFontSize(7.5);
+    doc.setTextColor(203, 213, 225);
+    doc.text(sanitizePdfText(subtitle), marginX + 4.5, cursorY + 9.2);
 
-    cursorY += sectionBandHeight + 3.5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...COLORS.white);
+    doc.text(
+      sanitizePdfText(`${count} ${count === 1 ? 'finding' : 'findings'}`),
+      marginX + contentWidth - 4.5,
+      cursorY + 6.8,
+      { align: 'right' },
+    );
 
-    if (groupItems.length === 0) {
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8.5);
-      doc.setTextColor(...COLORS.muted);
+    cursorY += bannerH + 4;
+  };
+
+  const renderPriorityGroups = (items: AuditFinding[]) => {
+    for (const priority of PRIORITY_ORDER) {
+      const meta = PRIORITY_META[priority];
+      const palette = PRIORITY_PALETTE[priority];
+      const groupItems = items.filter((f) => f.priority === priority);
+
+      // Section heading band (ensure at least header + one line/item fits)
+      const sectionBandHeight = 12.5;
+      ensureSpace(sectionBandHeight + 18);
+
+      doc.setFillColor(...palette.tint);
+      doc.setDrawColor(...palette.border);
+      doc.setLineWidth(0.35);
+      doc.roundedRect(marginX, cursorY, contentWidth, sectionBandHeight, 1.8, 1.8, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...palette.accent);
       doc.text(
-        sanitizePdfText(`No ${meta.headingLabel} issues identified.`),
+        sanitizePdfText(`${meta.headingLabel}   (${groupItems.length})`),
         marginX + 4.5,
-        cursorY + 3,
+        cursorY + 5.5,
       );
-      cursorY += 9;
-    } else {
-      groupItems.forEach((finding, idx) => {
-        renderFindingCard(finding, idx + 1);
-      });
-      cursorY += 2.5;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.6);
+      doc.setTextColor(...COLORS.muted);
+      const defLines = doc.splitTextToSize(sanitizePdfText(meta.definition), contentWidth - 9) as string[];
+      doc.text(defLines[0] ?? '', marginX + 4.5, cursorY + 10.2);
+
+      cursorY += sectionBandHeight + 3.5;
+
+      if (groupItems.length === 0) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...COLORS.muted);
+        doc.text(
+          sanitizePdfText(`No ${meta.headingLabel} issues identified.`),
+          marginX + 4.5,
+          cursorY + 3,
+        );
+        cursorY += 9;
+      } else {
+        groupItems.forEach((finding, idx) => {
+          renderFindingCard(finding, idx + 1);
+        });
+        cursorY += 2.5;
+      }
     }
+  };
+
+  const weldingFindings = report.findings.filter((f) => isWeldingFinding(f));
+  const includeWeldingSection =
+    Boolean(report.isWelded && report.weldingStandard) || weldingFindings.length > 0;
+
+  if (!includeWeldingSection) {
+    renderPriorityGroups(report.findings);
+  } else {
+    const gdtFindings = report.findings.filter((f) => !isWeldingFinding(f));
+    const baseStandardTitle = report.rulebookVersion.split(' + ')[0] || report.rulebookVersion;
+    renderSectionBanner(
+      'GD&T & ASSEMBLY AUDIT',
+      `${baseStandardTitle}  |  BOM & Balloon Parity`,
+      gdtFindings.length,
+    );
+    renderPriorityGroups(gdtFindings);
+
+    cursorY += 3;
+    renderSectionBanner(
+      'WELDING STANDARD AUDIT',
+      report.weldingStandard ? `${report.weldingStandard} Welding Representation` : 'Welding Compliance',
+      weldingFindings.length,
+    );
+    renderPriorityGroups(weldingFindings);
   }
 
   // =========================================================================

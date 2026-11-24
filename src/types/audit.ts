@@ -27,6 +27,38 @@ export const AUDIT_STANDARDS: Record<
   },
 };
 
+export type WeldingStandard = 'AWS A2.4:2007' | 'ISO 2553:2019';
+
+export const WELDING_STANDARD_OPTIONS: WeldingStandard[] = ['AWS A2.4:2007', 'ISO 2553:2019'];
+
+export const WELDING_STANDARDS: Record<
+  WeldingStandard,
+  {
+    id: WeldingStandard;
+    shortLabel: 'AWS' | 'ISO';
+    label: string;
+    rulebookFile: string;
+    ruleCount: number;
+  }
+> = {
+  'AWS A2.4:2007': {
+    id: 'AWS A2.4:2007',
+    shortLabel: 'AWS',
+    label: 'AWS A2.4:2007',
+    rulebookFile: 'src/data/aws-a2.4-2007-audit-rulebook.json',
+    ruleCount: 246,
+  },
+  'ISO 2553:2019': {
+    id: 'ISO 2553:2019',
+    shortLabel: 'ISO',
+    label: 'ISO 2553:2019',
+    rulebookFile: 'src/data/iso-2553-2019-audit-rulebook.json',
+    ruleCount: 74,
+  },
+};
+
+export type AuditFindingScope = 'gdt' | 'welding';
+
 export interface AuditBoundingBox {
   ymin: number;
   xmin: number;
@@ -45,6 +77,7 @@ export interface AuditFinding {
   asmeCitation?: string;
   costImpact: boolean;
   category: string;
+  auditScope?: AuditFindingScope;
   boundingBox?: AuditBoundingBox;
 }
 
@@ -58,6 +91,9 @@ export interface DrawingAuditReport {
   ruleCount: number;
   pageCount: number;
   modelUsed: string;
+  isAssembly?: boolean;
+  isWelded?: boolean;
+  weldingStandard?: WeldingStandard | null;
 }
 
 export interface AuditProgress {
@@ -75,6 +111,9 @@ export type AuditRunState =
       status: 'analyzing';
       fileName: string;
       standard: AuditStandard;
+      isAssembly?: boolean;
+      isWelded?: boolean;
+      weldingStandard?: WeldingStandard | null;
       startedAt: number;
       progress: AuditProgress;
     }
@@ -121,6 +160,19 @@ export const PRIORITY_META: Record<
 
 export const PRIORITY_ORDER: AuditPriority[] = ['P0', 'P1', 'P2', 'P3'];
 
+export function isWeldingFinding(finding: Pick<AuditFinding, 'auditScope' | 'asmeCitation' | 'category'>): boolean {
+  if (finding.auditScope === 'welding') {
+    return true;
+  }
+  if (finding.asmeCitation && /^(AWS-A2\.4|ISO-2553)/i.test(finding.asmeCitation.trim())) {
+    return true;
+  }
+  if (finding.category?.trim().toLowerCase() === 'welding compliance') {
+    return true;
+  }
+  return false;
+}
+
 export function formatFindingLine(finding: AuditFinding): string {
   const citationSuffix = finding.asmeCitation?.trim()
     ? ` (${finding.asmeCitation.trim()})`
@@ -129,11 +181,34 @@ export function formatFindingLine(finding: AuditFinding): string {
   return `**${finding.location}:** ${costPrefix}${finding.description}${citationSuffix} -> ${finding.impact} -> ${finding.recommendedFix}`;
 }
 
+function appendPrioritySections(lines: string[], items: AuditFinding[]): void {
+  for (const priority of PRIORITY_ORDER) {
+    const meta = PRIORITY_META[priority];
+    const group = items.filter((item) => item.priority === priority);
+    lines.push('', `### ${meta.headingLabel}`);
+    if (group.length === 0) {
+      lines.push('- None identified.');
+    } else {
+      for (const item of group) {
+        lines.push(`- ${formatFindingLine(item)}`);
+      }
+    }
+  }
+}
+
 export function formatAuditReportToMarkdown(
   drawingName: string,
   generalAssessment: string,
   findings: AuditFinding[],
+  options?: {
+    isWelded?: boolean;
+    weldingStandard?: WeldingStandard | null;
+  },
 ): string {
+  const weldingFindings = findings.filter((item) => isWeldingFinding(item));
+  const includeWeldingSection =
+    Boolean(options?.isWelded && options?.weldingStandard) || weldingFindings.length > 0;
+
   const lines: string[] = [
     `# Drawing: ${drawingName}`,
     '',
@@ -142,18 +217,19 @@ export function formatAuditReportToMarkdown(
     '## Actionable Findings',
   ];
 
-  for (const priority of PRIORITY_ORDER) {
-    const meta = PRIORITY_META[priority];
-    const items = findings.filter((item) => item.priority === priority);
-    lines.push('', `### ${meta.headingLabel}`);
-    if (items.length === 0) {
-      lines.push('- None identified.');
-    } else {
-      for (const item of items) {
-        lines.push(`- ${formatFindingLine(item)}`);
-      }
-    }
+  if (!includeWeldingSection) {
+    appendPrioritySections(lines, findings);
+    return lines.join('\n');
   }
+
+  const gdtFindings = findings.filter((item) => !isWeldingFinding(item));
+  appendPrioritySections(lines, gdtFindings);
+
+  lines.push('', '## Welding standard Audit');
+  if (options?.weldingStandard) {
+    lines.push('', `**Welding Standard:** ${options.weldingStandard}`);
+  }
+  appendPrioritySections(lines, weldingFindings);
 
   return lines.join('\n');
 }
