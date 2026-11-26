@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -14,12 +14,18 @@ import {
   Folder,
   LogOut,
   Moon,
+  Plus,
   RefreshCw,
   Sun,
   Trash2,
   Upload,
   X,
 } from 'lucide-react';
+import {
+  BatchQueuePanel,
+  type BatchAuditConfig,
+  type BatchAuditItem,
+} from './components/BatchQueuePanel';
 import { ConfirmActionModal } from './components/ConfirmActionModal';
 import { DriveFolderModal } from './components/DriveFolderModal';
 import { GoogleSignInButton } from './components/GoogleSignInButton';
@@ -56,7 +62,6 @@ import {
   formatModifiedDate,
   inspectPdfFile,
   isPdfFile,
-  type PdfInspectionResult,
 } from './utils/pdfHelpers';
 
 type UploadState =
@@ -149,11 +154,32 @@ function loadSavedFolder(): DriveFolder {
   return DEFAULT_DRIVE_FOLDER;
 }
 
+function syncQueuedPositions(items: BatchAuditItem[]): BatchAuditItem[] {
+  const totalInBatch = items.length;
+  return items.map((item, idx) => {
+    if (item.status === 'queued' && item.auditState.status === 'queued') {
+      if (
+        item.auditState.queuePosition === idx + 1 &&
+        item.auditState.totalInBatch === totalInBatch
+      ) {
+        return item;
+      }
+      return {
+        ...item,
+        auditState: {
+          ...item.auditState,
+          queuePosition: idx + 1,
+          totalInBatch,
+        },
+      };
+    }
+    return item;
+  });
+}
+
 export default function App() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedBlobUrl, setSelectedBlobUrl] = useState<string | null>(null);
-  const [inspection, setInspection] = useState<PdfInspectionResult | null>(null);
-  const [isInspecting, setIsInspecting] = useState<boolean>(false);
+  const [batchItems, setBatchItems] = useState<BatchAuditItem[]>([]);
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -168,7 +194,6 @@ export default function App() {
   const [weldingStandard, setWeldingStandard] = useState<WeldingStandard | null>(
     initialAssemblyConfig.weldingStandard,
   );
-  const [auditState, setAuditState] = useState<AuditRunState>({ status: 'idle' });
 
   // Google Drive Auth & Folder State (access token is kept strictly in memory)
   const [googleUser, setGoogleUser] = useState<User | null>(null);
@@ -191,8 +216,48 @@ export default function App() {
   const driveSectionRef = useRef<HTMLDivElement | null>(null);
   const dragDepthRef = useRef<number>(0);
   const blobUrlsRef = useRef<Set<string>>(new Set());
-  const activeDocIdRef = useRef<string | null>(null);
-  const auditAbortRef = useRef<AbortController | null>(null);
+  const batchItemsRef = useRef<BatchAuditItem[]>([]);
+  const isWorkerRunningRef = useRef<boolean>(false);
+  const activeAbortRef = useRef<{ itemId: string; controller: AbortController } | null>(null);
+  const isUnmountedRef = useRef<boolean>(false);
+  const replaceNextSelectionRef = useRef<boolean>(false);
+
+  const currentAuditConfig = useMemo<BatchAuditConfig>(
+    () => ({
+      standard: selectedStandard,
+      isAssembly,
+      isWelded: isAssembly && isWelded,
+      weldingStandard:
+        isAssembly && isWelded
+          ? (weldingStandard ??
+            (selectedStandard === 'ISO 1101:2017' ? 'ISO 2553:2019' : 'AWS A2.4:2007'))
+          : null,
+    }),
+    [selectedStandard, isAssembly, isWelded, weldingStandard],
+  );
+
+  const activeItem = useMemo<BatchAuditItem | null>(
+    () => batchItems.find((item) => item.id === activeItemId) ?? batchItems[0] ?? null,
+    [batchItems, activeItemId],
+  );
+
+  const selectedFile = activeItem?.file ?? null;
+  const selectedBlobUrl = activeItem?.blobUrl ?? null;
+  const inspection = activeItem?.inspection ?? null;
+  const isInspecting = activeItem?.isInspecting ?? false;
+  const auditState: AuditRunState = activeItem?.auditState ?? { status: 'idle' };
+
+  const updateBatchItems = useCallback(
+    (updater: (prev: BatchAuditItem[]) => BatchAuditItem[]) => {
+      const next = syncQueuedPositions(updater(batchItemsRef.current));
+      batchItemsRef.current = next;
+      if (!isUnmountedRef.current) {
+        setBatchItems(next);
+      }
+      return next;
+    },
+    [],
+  );
 
   // Initialize Firebase Auth listener (token stays strictly in memory)
   useEffect(() => {
@@ -211,9 +276,12 @@ export default function App() {
 
   // Clean up all created object URLs and abort pending audit on unmount
   useEffect(() => {
+    isUnmountedRef.current = false;
     const urls = blobUrlsRef.current;
     return () => {
-      auditAbortRef.current?.abort();
+      isUnmountedRef.current = true;
+      activeAbortRef.current?.controller.abort();
+      activeAbortRef.current = null;
       urls.forEach((url) => URL.revokeObjectURL(url));
       urls.clear();
     };
@@ -392,154 +460,434 @@ export default function App() {
     [accessToken, handleAuthExpired, performDriveUpload],
   );
 
-  const runDrawingAudit = useCallback(
-    async (
-      file: File,
-      docId: string,
-      pageCount?: number,
-      overrides?: {
-        standard?: AuditStandard;
-        isAssembly?: boolean;
-        isWelded?: boolean;
-        weldingStandard?: WeldingStandard | null;
-      },
-    ) => {
-      const targetStandard = overrides?.standard ?? selectedStandard;
-      const targetIsAssembly = overrides?.isAssembly ?? isAssembly;
-      const targetIsWelded = targetIsAssembly && (overrides?.isWelded ?? isWelded);
-      const targetWeldingStandard: WeldingStandard | null = targetIsWelded
-        ? (overrides?.weldingStandard !== undefined ? overrides.weldingStandard : weldingStandard) ??
-          (targetStandard === 'ISO 1101:2017' ? 'ISO 2553:2019' : 'AWS A2.4:2007')
-        : null;
-      const initialTotalPages =
-        typeof pageCount === 'number' && Number.isFinite(pageCount) && pageCount > 0
-          ? Math.floor(pageCount)
-          : 1;
-      auditAbortRef.current?.abort();
-      const controller = new AbortController();
-      auditAbortRef.current = controller;
+  const drainBatchQueue = useCallback(async () => {
+    if (isWorkerRunningRef.current) return;
+    isWorkerRunningRef.current = true;
 
-      setAuditState({
-        status: 'analyzing',
-        fileName: file.name,
-        standard: targetStandard,
-        isAssembly: targetIsAssembly,
-        isWelded: targetIsWelded,
-        weldingStandard: targetWeldingStandard,
-        startedAt: Date.now(),
-        progress: {
-          totalPages: initialTotalPages,
-          processedPages: 0,
-          currentPage: 1,
-          percent: initialTotalPages > 1 ? 3 : 10,
-          stage: 'preparing',
-          statusText:
-            initialTotalPages > 1
-              ? `Preparing ${initialTotalPages}-sheet drawing for audit...`
-              : 'Preparing drawing sheet for audit...',
-        },
-      });
+    try {
+      while (!isUnmountedRef.current) {
+        const nextItem = batchItemsRef.current.find((item) => item.status === 'queued');
+        if (!nextItem) break;
 
-      try {
-        const report = await analyzeDrawingPdf(file, {
-          pageCount: initialTotalPages,
-          standard: targetStandard,
-          isAssembly: targetIsAssembly,
-          isWelded: targetIsWelded,
-          weldingStandard: targetWeldingStandard,
-          reasoningDepth: 'deep',
-          signal: controller.signal,
-          onProgress: (progress) => {
-            if (activeDocIdRef.current !== docId || controller.signal.aborted) {
-              return;
+        const itemId = nextItem.id;
+        const config = nextItem.config;
+        const controller = new AbortController();
+        activeAbortRef.current = { itemId, controller };
+
+        // Ensure page count metadata is inspected before auditing
+        let resolvedInspection = nextItem.inspection;
+        if (!resolvedInspection) {
+          try {
+            resolvedInspection = await inspectPdfFile(nextItem.file);
+            if (!controller.signal.aborted && !isUnmountedRef.current) {
+              updateBatchItems((prev) =>
+                prev.map((item) =>
+                  item.id === itemId
+                    ? { ...item, inspection: resolvedInspection, isInspecting: false }
+                    : item,
+                ),
+              );
             }
-            setAuditState((prev) =>
-              prev.status === 'analyzing' ? { ...prev, progress } : prev,
-            );
-          },
-        });
+          } catch {
+            if (!isUnmountedRef.current) {
+              updateBatchItems((prev) =>
+                prev.map((item) =>
+                  item.id === itemId ? { ...item, isInspecting: false } : item,
+                ),
+              );
+            }
+          }
+        }
 
-        if (activeDocIdRef.current === docId && !controller.signal.aborted) {
-          setAuditState({ status: 'complete', report });
+        // Verify item is still queued and was not cancelled/removed while inspecting
+        const currentTarget = batchItemsRef.current.find(
+          (item) => item.id === itemId && item.status === 'queued',
+        );
+        if (!currentTarget || controller.signal.aborted || isUnmountedRef.current) {
+          if (activeAbortRef.current?.itemId === itemId) {
+            activeAbortRef.current = null;
+          }
+          continue;
         }
-      } catch (err) {
-        if (controller.signal.aborted || activeDocIdRef.current !== docId) {
-          return;
+
+        const totalPages =
+          resolvedInspection &&
+          Number.isFinite(resolvedInspection.pageCount) &&
+          resolvedInspection.pageCount > 0
+            ? Math.floor(resolvedInspection.pageCount)
+            : 1;
+
+        const startedAt = Date.now();
+        updateBatchItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  status: 'analyzing',
+                  auditState: {
+                    status: 'analyzing',
+                    fileName: item.file.name,
+                    standard: config.standard,
+                    isAssembly: config.isAssembly,
+                    isWelded: config.isWelded,
+                    weldingStandard: config.weldingStandard,
+                    startedAt,
+                    progress: {
+                      totalPages,
+                      processedPages: 0,
+                      currentPage: 1,
+                      percent: totalPages > 1 ? 3 : 10,
+                      stage: 'preparing',
+                      statusText:
+                        totalPages > 1
+                          ? `Preparing ${totalPages}-sheet drawing for audit...`
+                          : 'Preparing drawing sheet for audit...',
+                    },
+                  },
+                }
+              : item,
+          ),
+        );
+
+        try {
+          const report = await analyzeDrawingPdf(currentTarget.file, {
+            pageCount: totalPages,
+            standard: config.standard,
+            isAssembly: config.isAssembly,
+            isWelded: config.isWelded,
+            weldingStandard: config.weldingStandard,
+            reasoningDepth: 'deep',
+            signal: controller.signal,
+            onProgress: (progress) => {
+              if (controller.signal.aborted || isUnmountedRef.current) return;
+              updateBatchItems((prev) =>
+                prev.map((item) =>
+                  item.id === itemId && item.auditState.status === 'analyzing'
+                    ? { ...item, auditState: { ...item.auditState, progress } }
+                    : item,
+                ),
+              );
+            },
+          });
+
+          if (!controller.signal.aborted && !isUnmountedRef.current) {
+            updateBatchItems((prev) =>
+              prev.map((item) =>
+                item.id === itemId
+                  ? {
+                      ...item,
+                      status: 'complete',
+                      auditState: { status: 'complete', report },
+                    }
+                  : item,
+              ),
+            );
+          }
+        } catch (err) {
+          if (controller.signal.aborted || isUnmountedRef.current) {
+            if (!isUnmountedRef.current) {
+              updateBatchItems((prev) =>
+                prev.map((item) =>
+                  item.id === itemId && item.status === 'analyzing'
+                    ? {
+                        ...item,
+                        status: 'cancelled',
+                        auditState: { status: 'idle' },
+                      }
+                    : item,
+                ),
+              );
+            }
+          } else {
+            const message =
+              err instanceof Error
+                ? err.message
+                : 'Unable to complete the engineering design review. Please retry.';
+            updateBatchItems((prev) =>
+              prev.map((item) =>
+                item.id === itemId
+                  ? {
+                      ...item,
+                      status: 'error',
+                      auditState: { status: 'error', message },
+                    }
+                  : item,
+              ),
+            );
+          }
+        } finally {
+          if (activeAbortRef.current?.itemId === itemId) {
+            activeAbortRef.current = null;
+          }
         }
-        setAuditState({
-          status: 'error',
-          message:
-            err instanceof Error
-              ? err.message
-              : 'Unable to complete the engineering design review. Please retry.',
-        });
       }
+    } finally {
+      isWorkerRunningRef.current = false;
+      if (
+        !isUnmountedRef.current &&
+        batchItemsRef.current.some((item) => item.status === 'queued')
+      ) {
+        void drainBatchQueue();
+      }
+    }
+  }, [updateBatchItems]);
+
+  const handleRetryItem = useCallback(
+    (itemId: string) => {
+      const configSnapshot: BatchAuditConfig = { ...currentAuditConfig };
+      if (activeAbortRef.current?.itemId === itemId) {
+        activeAbortRef.current.controller.abort();
+        activeAbortRef.current = null;
+      }
+      updateBatchItems((prev) =>
+        prev.map((item, idx) =>
+          item.id === itemId
+            ? {
+                ...item,
+                config: configSnapshot,
+                status: 'queued',
+                auditState: {
+                  status: 'queued',
+                  fileName: item.file.name,
+                  standard: configSnapshot.standard,
+                  isAssembly: configSnapshot.isAssembly,
+                  isWelded: configSnapshot.isWelded,
+                  weldingStandard: configSnapshot.weldingStandard,
+                  queuePosition: idx + 1,
+                  totalInBatch: prev.length,
+                },
+              }
+            : item,
+        ),
+      );
+      void drainBatchQueue();
     },
-    [selectedStandard, isAssembly, isWelded, weldingStandard],
+    [currentAuditConfig, drainBatchQueue, updateBatchItems],
   );
 
-  const handleCancelAudit = useCallback(() => {
-    auditAbortRef.current?.abort();
-    auditAbortRef.current = null;
-    setAuditState({ status: 'idle' });
-  }, []);
+  const handleCancelItem = useCallback(
+    (itemId: string) => {
+      if (activeAbortRef.current?.itemId === itemId) {
+        activeAbortRef.current.controller.abort();
+        activeAbortRef.current = null;
+      }
+      updateBatchItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId && (item.status === 'analyzing' || item.status === 'queued')
+            ? {
+                ...item,
+                status: 'cancelled',
+                auditState: { status: 'idle' },
+              }
+            : item,
+        ),
+      );
+    },
+    [updateBatchItems],
+  );
 
-  const selectPdfFile = useCallback(
-    (file: File, options?: { skipAutoUpload?: boolean; existingDriveFile?: DrivePdfFile }) => {
-      if (!isPdfFile(file)) {
+  const handleStopBatch = useCallback(() => {
+    updateBatchItems((prev) =>
+      prev.map((item) =>
+        item.status === 'queued' || item.status === 'analyzing'
+          ? {
+              ...item,
+              status: 'cancelled',
+              auditState: { status: 'idle' },
+            }
+          : item,
+      ),
+    );
+    activeAbortRef.current?.controller.abort();
+    activeAbortRef.current = null;
+  }, [updateBatchItems]);
+
+  const handleRerunAll = useCallback(() => {
+    const configSnapshot: BatchAuditConfig = { ...currentAuditConfig };
+    activeAbortRef.current?.controller.abort();
+    activeAbortRef.current = null;
+    updateBatchItems((prev) =>
+      prev.map((item, idx) => ({
+        ...item,
+        config: configSnapshot,
+        status: 'queued',
+        auditState: {
+          status: 'queued',
+          fileName: item.file.name,
+          standard: configSnapshot.standard,
+          isAssembly: configSnapshot.isAssembly,
+          isWelded: configSnapshot.isWelded,
+          weldingStandard: configSnapshot.weldingStandard,
+          queuePosition: idx + 1,
+          totalInBatch: prev.length,
+        },
+      })),
+    );
+    void drainBatchQueue();
+  }, [currentAuditConfig, drainBatchQueue, updateBatchItems]);
+
+  const handleRemoveItem = useCallback(
+    (itemId: string) => {
+      if (activeAbortRef.current?.itemId === itemId) {
+        activeAbortRef.current.controller.abort();
+        activeAbortRef.current = null;
+      }
+      const next = updateBatchItems((prev) => prev.filter((item) => item.id !== itemId));
+      if (next.length === 0) {
+        setActiveItemId(null);
+        setIsPreviewOpen(false);
+        setUploadState({ status: 'idle' });
+      } else if (activeItemId === itemId) {
+        setActiveItemId(next[0].id);
+      }
+    },
+    [activeItemId, updateBatchItems],
+  );
+
+  const enqueuePdfFiles = useCallback(
+    (
+      rawFiles: File[],
+      options?: {
+        skipAutoUpload?: boolean;
+        existingDriveFile?: DrivePdfFile;
+        replaceExisting?: boolean;
+      },
+    ) => {
+      if (rawFiles.length === 0) return;
+
+      const validFiles: File[] = [];
+      const invalidNames: string[] = [];
+      for (const file of rawFiles) {
+        if (isPdfFile(file)) {
+          validFiles.push(file);
+        } else {
+          invalidNames.push(file.name);
+        }
+      }
+
+      if (validFiles.length === 0) {
         setErrorMessage(
-          `"${file.name}" is not a PDF document. Please select a file ending in .pdf.`,
+          invalidNames.length === 1
+            ? `"${invalidNames[0]}" is not a PDF document. Please select files ending in .pdf.`
+            : 'None of the selected files are PDF documents. Please select files ending in .pdf.',
         );
         setNoticeMessage(null);
         return;
       }
 
       setErrorMessage(null);
-      setNoticeMessage(null);
-
-      const blobUrl = URL.createObjectURL(file);
-      blobUrlsRef.current.add(blobUrl);
-
-      const docId = `${file.name}-${file.size}-${file.lastModified}-${Date.now()}`;
-      activeDocIdRef.current = docId;
-      setSelectedFile(file);
-      setSelectedBlobUrl(blobUrl);
-      setInspection(null);
-      setIsInspecting(true);
-      setIsPreviewOpen(true);
-
-      if (options?.existingDriveFile && linkedFolder) {
-        setUploadState({
-          status: 'uploaded',
-          driveFile: options.existingDriveFile,
-          folderName: linkedFolder.name,
-        });
+      if (invalidNames.length > 0) {
+        setNoticeMessage(
+          `Skipped ${invalidNames.length} non-PDF ${invalidNames.length === 1 ? 'file' : 'files'}: ${invalidNames.slice(0, 3).join(', ')}${invalidNames.length > 3 ? '...' : ''}.`,
+        );
       } else {
-        setUploadState({ status: 'idle' });
+        setNoticeMessage(null);
       }
 
-      inspectPdfFile(file)
-        .then((result) => {
-          if (activeDocIdRef.current === docId) {
-            setInspection(result);
-            setIsInspecting(false);
-            void runDrawingAudit(file, docId, result.pageCount);
-          }
-        })
-        .catch(() => {
-          if (activeDocIdRef.current === docId) {
-            setIsInspecting(false);
-            void runDrawingAudit(file, docId, 1);
-          }
-        });
-
-      // Automatically upload to linked Google Drive folder if connected and enabled
-      const token = accessToken ?? getAccessToken();
-      if (!options?.skipAutoUpload && autoUploadToDrive && linkedFolder && token) {
-        void initiateDriveUpload(file, linkedFolder);
+      const shouldReplace = Boolean(options?.replaceExisting);
+      const wasEmpty = shouldReplace || batchItemsRef.current.length === 0;
+      if (shouldReplace) {
+        activeAbortRef.current?.controller.abort();
+        activeAbortRef.current = null;
       }
+
+      const configSnapshot: BatchAuditConfig = { ...currentAuditConfig };
+      const now = Date.now();
+      const baseCount = shouldReplace ? 0 : batchItemsRef.current.length;
+      const totalAfterAdd = baseCount + validFiles.length;
+
+      const createdItems: BatchAuditItem[] = validFiles.map((file, idx) => {
+        const blobUrl = URL.createObjectURL(file);
+        blobUrlsRef.current.add(blobUrl);
+        const id = `${file.name}-${file.size}-${file.lastModified}-${now}-${idx}-${Math.random().toString(36).slice(2, 7)}`;
+        return {
+          id,
+          file,
+          blobUrl,
+          inspection: null,
+          isInspecting: true,
+          config: configSnapshot,
+          status: 'queued',
+          queuedAt: now + idx,
+          auditState: {
+            status: 'queued',
+            fileName: file.name,
+            standard: configSnapshot.standard,
+            isAssembly: configSnapshot.isAssembly,
+            isWelded: configSnapshot.isWelded,
+            weldingStandard: configSnapshot.weldingStandard,
+            queuePosition: baseCount + idx + 1,
+            totalInBatch: totalAfterAdd,
+          },
+        };
+      });
+
+      const nextList = updateBatchItems((prev) =>
+        shouldReplace ? createdItems : [...prev, ...createdItems],
+      );
+
+      // Select active item and decide whether to jump into Review workspace
+      if (wasEmpty && createdItems.length === 1) {
+        setActiveItemId(createdItems[0].id);
+        setIsPreviewOpen(true);
+      } else if (!activeItemId || shouldReplace) {
+        setActiveItemId(nextList[0]?.id ?? null);
+      }
+
+      // Update Drive upload banner state for single-file flow
+      if (wasEmpty && createdItems.length === 1) {
+        if (options?.existingDriveFile && linkedFolder) {
+          setUploadState({
+            status: 'uploaded',
+            driveFile: options.existingDriveFile,
+            folderName: linkedFolder.name,
+          });
+        } else {
+          setUploadState({ status: 'idle' });
+        }
+
+        const token = accessToken ?? getAccessToken();
+        if (!options?.skipAutoUpload && autoUploadToDrive && linkedFolder && token) {
+          void initiateDriveUpload(createdItems[0].file, linkedFolder);
+        }
+      }
+
+      // Inspect metadata (page count & paper format) in parallel for quick display in the queue
+      createdItems.forEach((created) => {
+        inspectPdfFile(created.file)
+          .then((result) => {
+            if (isUnmountedRef.current) return;
+            updateBatchItems((prev) =>
+              prev.map((item) =>
+                item.id === created.id
+                  ? { ...item, inspection: result, isInspecting: false }
+                  : item,
+              ),
+            );
+          })
+          .catch(() => {
+            if (isUnmountedRef.current) return;
+            updateBatchItems((prev) =>
+              prev.map((item) =>
+                item.id === created.id ? { ...item, isInspecting: false } : item,
+              ),
+            );
+          });
+      });
+
+      // Kick off sequential background queue worker
+      void drainBatchQueue();
     },
-    [accessToken, autoUploadToDrive, initiateDriveUpload, linkedFolder, runDrawingAudit],
+    [
+      accessToken,
+      activeItemId,
+      autoUploadToDrive,
+      currentAuditConfig,
+      drainBatchQueue,
+      initiateDriveUpload,
+      linkedFolder,
+      updateBatchItems,
+    ],
   );
 
   const handleGoogleSignIn = async () => {
@@ -601,14 +949,15 @@ export default function App() {
   const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-    const file = files[0];
-    if (!isPdfFile(file)) {
-      event.target.value = '';
-    }
-    selectPdfFile(file);
+    const fileArray = Array.from(files);
+    const shouldReplace = replaceNextSelectionRef.current;
+    replaceNextSelectionRef.current = false;
+    event.target.value = '';
+    enqueuePdfFiles(fileArray, { replaceExisting: shouldReplace });
   };
 
-  const triggerFilePicker = () => {
+  const triggerFilePicker = (options?: { replace?: boolean }) => {
+    replaceNextSelectionRef.current = Boolean(options?.replace);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
       fileInputRef.current.click();
@@ -616,15 +965,11 @@ export default function App() {
   };
 
   const handleClearFile = () => {
-    auditAbortRef.current?.abort();
-    auditAbortRef.current = null;
-    activeDocIdRef.current = null;
-    setSelectedFile(null);
-    setSelectedBlobUrl(null);
-    setInspection(null);
-    setIsInspecting(false);
+    activeAbortRef.current?.controller.abort();
+    activeAbortRef.current = null;
+    updateBatchItems(() => []);
+    setActiveItemId(null);
     setIsPreviewOpen(false);
-    setAuditState({ status: 'idle' });
     setErrorMessage(null);
     setNoticeMessage(null);
     setUploadState({ status: 'idle' });
@@ -638,7 +983,7 @@ export default function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    selectPdfFile(sampleFile, { skipAutoUpload: true });
+    enqueuePdfFiles([sampleFile], { skipAutoUpload: true });
   };
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
@@ -674,7 +1019,7 @@ export default function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    selectPdfFile(files[0]);
+    enqueuePdfFiles(Array.from(files));
   };
 
   const handleNavPreview = () => {
@@ -704,15 +1049,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-blueprint-mosaic text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      {/* Hidden replacement input for when user triggers Select PDF from preview mode */}
+      {/* Hidden file input for when user triggers Select PDFs from preview mode */}
       {isPreviewOpen && (
         <input
           ref={fileInputRef}
           type="file"
           accept=".pdf,application/pdf"
+          multiple
           onChange={handleFileInputChange}
           className="sr-only"
-          aria-label="Choose a PDF file"
+          aria-label="Choose one or more PDF files"
         />
       )}
 
@@ -767,34 +1113,28 @@ export default function App() {
         <div className="shrink-0">
           <button
             type="button"
-            onClick={triggerFilePicker}
+            onClick={() => triggerFilePicker()}
             className="px-4 py-2 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
           >
-            Select PDF
+            Select PDFs
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      {isPreviewOpen && selectedFile && selectedBlobUrl ? (
+      {isPreviewOpen && activeItem && selectedFile && selectedBlobUrl ? (
         <PdfPreviewWorkspace
           file={selectedFile}
           blobUrl={selectedBlobUrl}
           selectedStandard={selectedStandard}
           auditState={auditState}
-          onRunAudit={() => {
-            if (selectedFile && activeDocIdRef.current) {
-              void runDrawingAudit(selectedFile, activeDocIdRef.current, inspection?.pageCount, {
-                standard: selectedStandard,
-                isAssembly,
-                isWelded,
-                weldingStandard,
-              });
-            }
-          }}
-          onCancelAudit={handleCancelAudit}
+          batchItems={batchItems}
+          activeBatchItemId={activeItem.id}
+          onSelectBatchItem={(itemId) => setActiveItemId(itemId)}
+          onRunAudit={() => handleRetryItem(activeItem.id)}
+          onCancelAudit={() => handleCancelItem(activeItem.id)}
           onBack={() => setIsPreviewOpen(false)}
-          onReplaceClick={triggerFilePicker}
+          onReplaceClick={() => triggerFilePicker()}
         />
       ) : (
         <main className="flex-1 w-full max-w-[920px] mx-auto px-8 py-10">
@@ -807,9 +1147,10 @@ export default function App() {
                       Upload and audit engineering drawings
                     </h1>
                     <p className="mt-2.5 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">
-                      Upload a manufacturing drawing PDF to run an automated {selectedStandard}{' '}
-                      design review, inspect prioritized P0–P3 findings alongside the drawing preview,
-                      and sync files to your linked Google Drive folder.
+                      Upload one or more manufacturing drawing PDFs to run an automated{' '}
+                      {selectedStandard} design review sequentially in the background, inspect
+                      prioritized P0–P3 findings alongside the drawing preview, and sync files to
+                      your linked Google Drive folder.
                     </p>
                   </div>
 
@@ -1086,7 +1427,7 @@ export default function App() {
                           </p>
                           {!isWelded && (
                             <p className="text-xs text-blue-700 dark:text-sky-400 mt-1 font-mono">
-                              Active: {selectedStandard} + BOM vs. balloon quantity check
+                              Active: {selectedStandard} + BOM check
                             </p>
                           )}
                         </div>
@@ -1262,12 +1603,12 @@ export default function App() {
                     className="text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer"
                   >
                     {isDragging
-                      ? 'Release to load PDF document'
-                      : 'Drop a Engineering Drawing here, or choose from your computer'}
+                      ? 'Release to queue PDF drawings'
+                      : 'Drop one or more Engineering Drawings here, or choose from your computer'}
                   </label>
 
                   <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-                    Accepts .pdf documents <span aria-hidden="true">·</span>{' '}
+                    Accepts single or multiple .pdf documents (audited sequentially) <span aria-hidden="true">·</span>{' '}
                     {isDriveConnected && linkedFolder
                       ? autoUploadToDrive
                         ? `Uploads directly to "${linkedFolder.name}"`
@@ -1275,7 +1616,7 @@ export default function App() {
                       : 'Rendered locally on your machine'}
                   </p>
 
-                  {/* Standard HTML File Input for PDF Files */}
+                  {/* Standard HTML File Input for Single or Multiple PDF Files */}
                   <div className="mt-7 w-full max-w-md">
                     <input
                       ref={fileInputRef}
@@ -1283,6 +1624,7 @@ export default function App() {
                       name="pdfFile"
                       type="file"
                       accept=".pdf,application/pdf"
+                      multiple
                       onChange={handleFileInputChange}
                       aria-describedby="pdf-upload-hint"
                       className="block w-full text-sm text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 cursor-pointer
@@ -1293,14 +1635,36 @@ export default function App() {
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                     />
                     <p id="pdf-upload-hint" className="sr-only">
-                      Select a PDF file from your computer to display its filename and enable
-                      document preview.
+                      Select one or more PDF files from your computer to audit sequentially in the
+                      background and preview findings.
                     </p>
                   </div>
                 </div>
 
-                {/* Selected File Summary & Conditional Preview Button */}
-                {selectedFile ? (
+                {/* Batch Queue Panel (when 2+ drawings are loaded) OR Single Selected File Summary */}
+                {batchItems.length > 1 ? (
+                  <BatchQueuePanel
+                    items={batchItems}
+                    currentConfig={currentAuditConfig}
+                    isDriveConnected={isDriveConnected}
+                    hasLinkedFolder={Boolean(linkedFolder)}
+                    onOpenReview={(itemId) => {
+                      setActiveItemId(itemId);
+                      setIsPreviewOpen(true);
+                    }}
+                    onRetryItem={handleRetryItem}
+                    onRemoveItem={handleRemoveItem}
+                    onAddMorePdfs={() => triggerFilePicker()}
+                    onStopBatch={handleStopBatch}
+                    onRerunAll={handleRerunAll}
+                    onClearAll={handleClearFile}
+                    onUploadItemToDrive={(item) => {
+                      if (linkedFolder) {
+                        void initiateDriveUpload(item.file, linkedFolder);
+                      }
+                    }}
+                  />
+                ) : selectedFile && activeItem ? (
                   <div aria-live="polite" className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                       <div className="flex items-start gap-3.5 min-w-0">
@@ -1373,7 +1737,17 @@ export default function App() {
 
                         <button
                           type="button"
-                          onClick={triggerFilePicker}
+                          onClick={() => triggerFilePicker()}
+                          title="Add more PDFs to start a batch audit"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add PDFs</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => triggerFilePicker({ replace: true })}
                           title="Choose a different PDF"
                           className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                         >
@@ -1531,19 +1905,9 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (selectedFile && activeDocIdRef.current) {
+                                  if (activeItem) {
                                     setIsPreviewOpen(true);
-                                    void runDrawingAudit(
-                                      selectedFile,
-                                      activeDocIdRef.current,
-                                      inspection?.pageCount,
-                                      {
-                                        standard: selectedStandard,
-                                        isAssembly,
-                                        isWelded,
-                                        weldingStandard,
-                                      },
-                                    );
+                                    handleRetryItem(activeItem.id);
                                   }
                                 }}
                                 className="font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white underline underline-offset-2 whitespace-nowrap"

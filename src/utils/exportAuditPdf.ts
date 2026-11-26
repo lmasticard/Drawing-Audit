@@ -2,7 +2,9 @@ import { jsPDF } from 'jspdf';
 import {
   PRIORITY_META,
   PRIORITY_ORDER,
+  getExecutiveVerdict,
   isWeldingFinding,
+  normalizeExecutiveSummary,
   type AuditFinding,
   type AuditPriority,
   type DrawingAuditReport,
@@ -21,6 +23,30 @@ const COLORS = {
   blue: [29, 78, 216] as RgbColor,
   costText: [146, 64, 14] as RgbColor,
   costBg: [254, 243, 199] as RgbColor,
+};
+
+const VERDICT_PALETTE: Record<
+  'red' | 'amber' | 'green',
+  { accent: RgbColor; tint: RgbColor; border: RgbColor; dot: RgbColor }
+> = {
+  red: {
+    accent: [153, 27, 27],
+    tint: [254, 242, 242],
+    border: [252, 165, 165],
+    dot: [220, 38, 38],
+  },
+  amber: {
+    accent: [146, 64, 14],
+    tint: [255, 251, 235],
+    border: [252, 211, 77],
+    dot: [217, 119, 6],
+  },
+  green: {
+    accent: [6, 95, 70],
+    tint: [236, 253, 245],
+    border: [110, 231, 183],
+    dot: [5, 150, 105],
+  },
 };
 
 const PRIORITY_PALETTE: Record<
@@ -225,12 +251,81 @@ export function exportAuditReportToPdf(report: DrawingAuditReport, originalFileN
   cursorY += metaBoxHeight + 5;
 
   // =========================================================================
-  // 3. P0–P3 SEVERITY KPI CARDS
+  // 3. EXECUTIVE ASSESSMENT HEADER CARD (Verdict Banner + 1-Paragraph Summary)
+  // =========================================================================
+  const verdict = getExecutiveVerdict(report.findings);
+  const verdictPalette = VERDICT_PALETTE[verdict.severityTone];
+  const executiveSummaryText = sanitizePdfText(
+    normalizeExecutiveSummary(report.executive_summary || report.generalAssessment),
+  );
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.2);
+  const summaryLines = doc.splitTextToSize(executiveSummaryText, contentWidth - 10) as string[];
+  const verdictBandHeight = 9.5;
+  const summaryBodyHeight = Math.max(12, 6 + summaryLines.length * 4.5);
+  const executiveCardHeight = verdictBandHeight + summaryBodyHeight;
+
+  ensureSpace(executiveCardHeight + 6);
+  const execCardTopY = cursorY;
+
+  // White card body fill
+  doc.setFillColor(...COLORS.white);
+  doc.roundedRect(marginX, execCardTopY, contentWidth, executiveCardHeight, 2, 2, 'F');
+
+  // Top Verdict Banner tint strip
+  doc.setFillColor(...verdictPalette.tint);
+  doc.roundedRect(marginX, execCardTopY, contentWidth, verdictBandHeight, 2, 2, 'F');
+  doc.rect(marginX, execCardTopY + verdictBandHeight - 2, contentWidth, 2, 'F');
+
+  // Divider between verdict banner and summary paragraph
+  doc.setDrawColor(...verdictPalette.border);
+  doc.setLineWidth(0.3);
+  doc.line(
+    marginX,
+    execCardTopY + verdictBandHeight,
+    marginX + contentWidth,
+    execCardTopY + verdictBandHeight,
+  );
+
+  // Outer card border
+  doc.setDrawColor(...verdictPalette.border);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(marginX, execCardTopY, contentWidth, executiveCardHeight, 2, 2, 'S');
+
+  // Status indicator dot + bold Verdict label
+  doc.setFillColor(...verdictPalette.dot);
+  doc.circle(marginX + 6, execCardTopY + verdictBandHeight / 2, 1.4, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...verdictPalette.accent);
+  doc.text(sanitizePdfText(verdict.label), marginX + 10, execCardTopY + 6.2);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(...COLORS.muted);
+  doc.text('EXECUTIVE ASSESSMENT', marginX + contentWidth - 5, execCardTopY + 6, {
+    align: 'right',
+  });
+
+  // 1-Paragraph Assessment Block directly beneath Verdict Banner
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.2);
+  doc.setTextColor(...COLORS.ink);
+  doc.text(summaryLines, marginX + 5, execCardTopY + verdictBandHeight + 5.6, {
+    lineHeightFactor: 1.32,
+  });
+
+  cursorY = execCardTopY + executiveCardHeight + 6;
+
+  // =========================================================================
+  // 4. P0–P3 SEVERITY KPI CARDS
   // =========================================================================
   const cardGap = 3.5;
   const cardWidth = (contentWidth - cardGap * 3) / 4;
   const cardHeight = 18;
 
+  ensureSpace(cardHeight + 8);
   PRIORITY_ORDER.forEach((priority, idx) => {
     const x = marginX + idx * (cardWidth + cardGap);
     const palette = PRIORITY_PALETTE[priority];
@@ -253,34 +348,7 @@ export function exportAuditReportToPdf(report: DrawingAuditReport, originalFileN
     doc.text(String(count), x + 4, cursorY + 14);
   });
 
-  cursorY += cardHeight + 6;
-
-  // =========================================================================
-  // 4. GENERAL ASSESSMENT
-  // =========================================================================
-  const assessmentText = sanitizePdfText(report.generalAssessment);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  const assessmentLines = doc.splitTextToSize(assessmentText, contentWidth - 10) as string[];
-  const assessmentBoxHeight = 11 + assessmentLines.length * 4.6;
-
-  ensureSpace(assessmentBoxHeight + 4);
-  doc.setFillColor(...COLORS.white);
-  doc.setDrawColor(...COLORS.border);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(marginX, cursorY, contentWidth, assessmentBoxHeight, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...COLORS.muted);
-  doc.text('GENERAL ASSESSMENT', marginX + 5, cursorY + 6);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(...COLORS.ink);
-  doc.text(assessmentLines, marginX + 5, cursorY + 11.2, { lineHeightFactor: 1.32 });
-
-  cursorY += assessmentBoxHeight + 8;
+  cursorY += cardHeight + 7;
 
   // =========================================================================
   // 5. ACTIONABLE FINDINGS BY PRIORITY (P0 -> P3)

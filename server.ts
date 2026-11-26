@@ -162,7 +162,7 @@ Finding Structure Requirements:
   - category: One of "GD&T Compliance", "Manufacturability & Cost", "Dimensions & Tolerances", "Clarity & Title Block", "Design Intent", "BOM & Assembly", "Welding Compliance".
   - auditScope: Set to "gdt" for all GD&T/ISO GPS, dimensional, tolerance, DFM, title block, and BOM/assembly findings. Set to "welding" ONLY when the Welding Standard Audit rulebook is active and the finding pertains to a welding, brazing, or NDE symbol/specification.
   - box_2d: Tight normalized bounding box [ymin, xmin, ymax, xmax] as integers on a 0 to 1000 scale relative to the unrotated referenced page (0,0 = top-left; 1000,1000 = bottom-right) pinpointing the exact dimension, feature control frame, datum symbol, view feature, note, or title block cell where this issue occurs. If an expected element is missing (e.g., missing title block entry or missing datum on a view), tightly box the title block cell or view area where it belongs. Return [] ONLY if the finding truly applies globally to the entire sheet with no localized region.
-- Keep generalAssessment to a crisp 1-2 sentence summary of the drawing's overall manufacturing readiness, quality, and clarity.
+- After completing the findings array, write executive_summary as a single, clean, readable paragraph (2-4 sentences, plain prose with NO bullet points or line breaks) summarizing the exact findings you just detected—its claims, severity breakdown, and total count must strictly match the itemized findings array.
 
 === ${standard} AUDIT RULEBOOK (${ruleCount} RULES) ===
 ${digestText}
@@ -286,11 +286,6 @@ const AUDIT_RESPONSE_SCHEMA = {
       type: Type.STRING,
       description: 'Drawing title, part number, or file name observed on the drawing.',
     },
-    generalAssessment: {
-      type: Type.STRING,
-      description:
-        'A concise 1-2 sentence summary of the drawing overall quality, clarity, and manufacturing readiness.',
-    },
     findings: {
       type: Type.ARRAY,
       description: 'Exhaustive list of actionable design review findings sorted from P0 to P3.',
@@ -374,8 +369,14 @@ const AUDIT_RESPONSE_SCHEMA = {
         ],
       },
     },
+    executive_summary: {
+      type: Type.STRING,
+      description:
+        'A single, clean, readable prose paragraph (2-4 sentences, no bullet points or newlines) generated AFTER the findings array, accurately summarizing the exact findings just detected, their manufacturing/compliance impact, and overall drawing readiness so every claim matches the itemized findings count and details.',
+    },
   },
-  required: ['drawingName', 'generalAssessment', 'findings'],
+  propertyOrdering: ['drawingName', 'findings', 'executive_summary'],
+  required: ['drawingName', 'findings', 'executive_summary'],
 };
 
 function normalizeBoundingBox(raw: unknown): AuditBoundingBox | undefined {
@@ -440,19 +441,35 @@ function appendMarkdownPrioritySections(lines: string[], findings: AuditFindingP
   }
 }
 
+function normalizeSingleParagraph(text: string): string {
+  return text
+    .split(/\r?\n+/)
+    .map((line) => line.trim().replace(/^([-*•+]|\d+[.)])\s+/, ''))
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function formatMarkdownReport(
   drawingName: string,
-  generalAssessment: string,
+  executiveSummary: string,
   findings: AuditFindingPayload[],
   weldingStandard?: WeldingStandard | null,
 ): string {
+  const verdictLabel =
+    findings.length > 0
+      ? `REVISE (${findings.length} ${findings.length === 1 ? 'finding' : 'findings'})`
+      : 'PASS (only p2 and p3 findings)';
   const weldingFindings = findings.filter((item) => item.auditScope === 'welding');
   const includeWeldingSection = Boolean(weldingStandard) || weldingFindings.length > 0;
 
   const lines: string[] = [
     `# Drawing: ${drawingName}`,
     '',
-    `**General Assessment:** ${generalAssessment}`,
+    `**Verdict:** ${verdictLabel}`,
+    '',
+    `**Executive Assessment:** ${normalizeSingleParagraph(executiveSummary)}`,
     '',
     '## Actionable Findings',
   ];
@@ -712,7 +729,7 @@ async function startServer() {
 Evaluate all visible views, sections, dimensions, tolerance indicators / feature control frames, datum references, general notes, tolerances, material/finish callouts, and title block information against the ${effectiveRulebookVersion} rulebook and practical manufacturing / cost-driver best practices.
 ${assemblyScopeLine}
 
-Return structured JSON containing drawingName, generalAssessment (1-2 sentences), and exhaustive prioritized actionable findings (P0, P1, P2, P3), including tight normalized [ymin, xmin, ymax, xmax] (0-1000) box_2d coordinates for every localized finding so it can be highlighted directly on the drawing.`,
+Return structured JSON in exact schema order: first drawingName, then exhaustive prioritized actionable findings (P0, P1, P2, P3) with tight normalized [ymin, xmin, ymax, xmax] (0-1000) box_2d coordinates for every localized finding, and finally executive_summary (a single clean prose paragraph with no bullet points summarizing the exact findings you just detected so the count and details match).`,
       });
 
       const ai = getGeminiClient();
@@ -736,8 +753,9 @@ Return structured JSON containing drawingName, generalAssessment (1-2 sentences)
 
       let parsed: {
         drawingName?: string;
-        generalAssessment?: string;
         findings?: AuditFindingPayload[];
+        executive_summary?: string;
+        generalAssessment?: string;
       };
 
       try {
@@ -751,10 +769,15 @@ Return structured JSON containing drawingName, generalAssessment (1-2 sentences)
         typeof parsed.drawingName === 'string' && parsed.drawingName.trim()
           ? parsed.drawingName.trim()
           : fileName;
-      const generalAssessment =
-        typeof parsed.generalAssessment === 'string' && parsed.generalAssessment.trim()
-          ? parsed.generalAssessment.trim()
-          : `Engineering design review completed against ${activeRulebook.standard} and manufacturing readiness criteria.`;
+      const rawSummary =
+        typeof parsed.executive_summary === 'string' && parsed.executive_summary.trim()
+          ? parsed.executive_summary
+          : typeof parsed.generalAssessment === 'string' && parsed.generalAssessment.trim()
+            ? parsed.generalAssessment
+            : '';
+      const executiveSummary =
+        normalizeSingleParagraph(rawSummary) ||
+        `Engineering design review completed against ${activeRulebook.standard} and manufacturing readiness criteria.`;
 
       const rawFindings = Array.isArray(parsed.findings) ? parsed.findings : [];
       const normalizedFindings = rawFindings
@@ -817,14 +840,15 @@ Return structured JSON containing drawingName, generalAssessment (1-2 sentences)
 
       const markdown = formatMarkdownReport(
         drawingName,
-        generalAssessment,
+        executiveSummary,
         normalizedFindings,
         activeWelding?.standard ?? null,
       );
 
       res.json({
         drawingName,
-        generalAssessment,
+        executive_summary: executiveSummary,
+        generalAssessment: executiveSummary,
         findings: normalizedFindings,
         markdown,
         analyzedAt: new Date().toISOString(),

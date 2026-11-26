@@ -6,9 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] - 2026-11-23
+## [Unreleased] - 2026-11-26
 
 ### Added
+
+- **Executive Assessment Header Card & Post-Findings `executive_summary` Schema Ordering**
+  - Added an **Executive Assessment Header Card** at the top of the Design Review panel (`src/components/AuditReviewPanel.tsx`) and at the top of exported A4 PDF reports (`src/utils/exportAuditPdf.ts`) before categorized findings:
+    - **Dynamic Verdict Banner:** Automatically displays bold **`REVISE (N findings)`** with a red/amber status indicator when `findings.length > 0`, or **`PASS (only p2 and p3 findings)`** with a green status indicator when `findings.length === 0`.
+    - **1-Paragraph Assessment Block:** Renders Gemini's `executive_summary` directly beneath the verdict banner as a single, clean prose paragraph with bullet stripping and whitespace normalization.
+  - Updated the Gemini structured-output JSON schema (`AUDIT_RESPONSE_SCHEMA` in `server.ts`) with explicit `propertyOrdering: ['drawingName', 'findings', 'executive_summary']` so `executive_summary` is generated strictly *after* the `findings` array, guaranteeing the summary matches the exact detected finding count and details.
+
+- **Batch PDF Processing & Sequential Background Audit Queue**
+  - Enabled multi-PDF uploads via both the file picker (`multiple`) and drag-and-drop, allowing users to queue multiple engineering drawings at once or append additional PDFs to an active or completed queue.
+  - Added a sequential background queue worker in `src/App.tsx` that audits queued drawings one at a time against the selected audit standard (including the active cascading Assembly / Welded / Welding Standard configuration), continues to the next drawing if any single file fails, and survives switching between the Upload page and the Review workspace.
+  - Built `BatchQueuePanel` (`src/components/BatchQueuePanel.tsx`) displaying an overall batch progress bar, aggregated P0–P3 totals, combined batch Markdown export (`Export Batch MD`), `Add PDFs`, `Stop Batch` / `Re-run All`, `Clear All`, and per-drawing live sheet progress, one-click `PDF` report export, `Retry`/`Re-run`, optional Google Drive upload, and `Remove`.
+  - Added a compact **Batch Drawing Switcher** bar inside `PdfPreviewWorkspace` (with Previous/Next drawing controls, live status dropdown, and background batch progress indicator) plus a dedicated **Queued** state in `AuditReviewPanel`.
 
 - **Cascading Assembly & Welding Drawing Audit Workflow (Dynamic Rulebook Routing)**
   - Upgraded the front-page configuration beneath the Base GD&T Audit Standard selector into a 3-step cascading workflow with automatic state reset rules:

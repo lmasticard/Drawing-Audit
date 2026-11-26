@@ -83,6 +83,7 @@ export interface AuditFinding {
 
 export interface DrawingAuditReport {
   drawingName: string;
+  executive_summary: string;
   generalAssessment: string;
   findings: AuditFinding[];
   markdown: string;
@@ -96,6 +97,42 @@ export interface DrawingAuditReport {
   weldingStandard?: WeldingStandard | null;
 }
 
+export interface ExecutiveVerdict {
+  status: 'revise' | 'pass';
+  severityTone: 'red' | 'amber' | 'green';
+  label: string;
+  findingsCount: number;
+}
+
+export function getExecutiveVerdict(findings: Pick<AuditFinding, 'priority'>[]): ExecutiveVerdict {
+  const count = findings.length;
+  if (count > 0) {
+    const hasCritical = findings.some((f) => f.priority === 'P0');
+    return {
+      status: 'revise',
+      severityTone: hasCritical ? 'red' : 'amber',
+      label: `REVISE (${count} ${count === 1 ? 'finding' : 'findings'})`,
+      findingsCount: count,
+    };
+  }
+  return {
+    status: 'pass',
+    severityTone: 'green',
+    label: 'PASS (only p2 and p3 findings)',
+    findingsCount: 0,
+  };
+}
+
+export function normalizeExecutiveSummary(text: string): string {
+  return (text || '')
+    .split(/\r?\n+/)
+    .map((line) => line.trim().replace(/^([-*•+]|\d+[.)])\s+/, ''))
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 export interface AuditProgress {
   totalPages: number;
   processedPages: number;
@@ -107,6 +144,16 @@ export interface AuditProgress {
 
 export type AuditRunState =
   | { status: 'idle' }
+  | {
+      status: 'queued';
+      fileName: string;
+      standard: AuditStandard;
+      isAssembly?: boolean;
+      isWelded?: boolean;
+      weldingStandard?: WeldingStandard | null;
+      queuePosition: number;
+      totalInBatch: number;
+    }
   | {
       status: 'analyzing';
       fileName: string;
@@ -198,13 +245,15 @@ function appendPrioritySections(lines: string[], items: AuditFinding[]): void {
 
 export function formatAuditReportToMarkdown(
   drawingName: string,
-  generalAssessment: string,
+  executiveSummary: string,
   findings: AuditFinding[],
   options?: {
     isWelded?: boolean;
     weldingStandard?: WeldingStandard | null;
   },
 ): string {
+  const verdict = getExecutiveVerdict(findings);
+  const cleanSummary = normalizeExecutiveSummary(executiveSummary);
   const weldingFindings = findings.filter((item) => isWeldingFinding(item));
   const includeWeldingSection =
     Boolean(options?.isWelded && options?.weldingStandard) || weldingFindings.length > 0;
@@ -212,7 +261,9 @@ export function formatAuditReportToMarkdown(
   const lines: string[] = [
     `# Drawing: ${drawingName}`,
     '',
-    `**General Assessment:** ${generalAssessment}`,
+    `**Verdict:** ${verdict.label}`,
+    '',
+    `**Executive Assessment:** ${cleanSummary}`,
     '',
     '## Actionable Findings',
   ];

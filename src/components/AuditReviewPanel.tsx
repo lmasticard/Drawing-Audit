@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
+  AlertTriangle,
   Check,
+  CheckCircle2,
+  Clock,
   Copy,
   Crosshair,
   Download,
@@ -15,7 +18,9 @@ import {
   PRIORITY_META,
   PRIORITY_ORDER,
   WELDING_STANDARDS,
+  getExecutiveVerdict,
   isWeldingFinding,
+  normalizeExecutiveSummary,
   type AuditFinding,
   type AuditPriority,
   type AuditRunState,
@@ -121,7 +126,7 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
   const report = auditState.status === 'complete' ? auditState.report : null;
   const activeStandardLabel = useMemo(() => {
     if (report) return report.rulebookVersion;
-    if (auditState.status === 'analyzing') {
+    if (auditState.status === 'analyzing' || auditState.status === 'queued') {
       if (auditState.isAssembly && auditState.isWelded && auditState.weldingStandard) {
         return `${auditState.standard} + ${auditState.weldingStandard}`;
       }
@@ -135,10 +140,13 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
 
   const activeRuleCount = useMemo(() => {
     if (report) return report.ruleCount;
-    const baseStandard = auditState.status === 'analyzing' ? auditState.standard : selectedStandard;
+    const baseStandard =
+      auditState.status === 'analyzing' || auditState.status === 'queued'
+        ? auditState.standard
+        : selectedStandard;
     const baseCount = AUDIT_STANDARDS[baseStandard].ruleCount;
     if (
-      auditState.status === 'analyzing' &&
+      (auditState.status === 'analyzing' || auditState.status === 'queued') &&
       auditState.isAssembly &&
       auditState.isWelded &&
       auditState.weldingStandard
@@ -326,7 +334,7 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
             </div>
           </div>
 
-          {auditState.status !== 'analyzing' && (
+          {auditState.status !== 'analyzing' && auditState.status !== 'queued' && (
             <button
               type="button"
               onClick={onRunAudit}
@@ -402,6 +410,32 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
           </div>
         )}
       </div>
+
+      {/* State 0: Queued in Batch */}
+      {auditState.status === 'queued' && (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 text-center">
+          <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center mb-4">
+            <Clock className="w-5 h-5" />
+          </div>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+            Queued for sequential batch audit
+          </h3>
+          <p className="mt-1 text-xs font-mono tabular-nums text-blue-700 dark:text-sky-400">
+            Position #{auditState.queuePosition} of {auditState.totalInBatch} · {activeStandardLabel}
+          </p>
+          <p className="mt-2.5 max-w-sm text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            Earlier drawings in the batch are currently being audited in the background. You can
+            inspect this sheet now and findings will appear automatically once its turn finishes.
+          </p>
+          <button
+            type="button"
+            onClick={onCancelAudit}
+            className="mt-6 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          >
+            Skip from Queue
+          </button>
+        </div>
+      )}
 
       {/* State 1: Analyzing */}
       {auditState.status === 'analyzing' && (
@@ -589,21 +623,74 @@ export const AuditReviewPanel: React.FC<AuditReviewPanelProps> = ({
       {/* State 4: Complete Report */}
       {report && (
         <>
-          {/* General Assessment Band */}
-          <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 shrink-0">
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              <span>Drawing</span>
-              <span className="mx-1.5" aria-hidden="true">
-                ·
-              </span>
-              <span className="font-medium text-slate-800 dark:text-slate-100">
-                {report.drawingName}
-              </span>
-            </div>
-            <p className="mt-1.5 text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
-              {report.generalAssessment}
-            </p>
-          </div>
+          {/* Executive Assessment Header Card (above categorized itemized findings) */}
+          {(() => {
+            const verdict = getExecutiveVerdict(report.findings);
+            const summaryParagraph = normalizeExecutiveSummary(
+              report.executive_summary || report.generalAssessment,
+            );
+            const cardBorder =
+              verdict.severityTone === 'red'
+                ? 'border-red-200 dark:border-red-900/70'
+                : verdict.severityTone === 'amber'
+                  ? 'border-amber-200 dark:border-amber-900/70'
+                  : 'border-emerald-200 dark:border-emerald-900/70';
+            const bannerStyle =
+              verdict.severityTone === 'red'
+                ? 'bg-red-50/90 dark:bg-red-950/50 border-b border-red-200/80 dark:border-red-900/60 text-red-800 dark:text-red-300'
+                : verdict.severityTone === 'amber'
+                  ? 'bg-amber-50/90 dark:bg-amber-950/45 border-b border-amber-200/80 dark:border-amber-900/60 text-amber-900 dark:text-amber-300'
+                  : 'bg-emerald-50/90 dark:bg-emerald-950/45 border-b border-emerald-200/80 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300';
+            const dotColor =
+              verdict.severityTone === 'red'
+                ? 'bg-red-600 dark:bg-red-400'
+                : verdict.severityTone === 'amber'
+                  ? 'bg-amber-500 dark:bg-amber-400'
+                  : 'bg-emerald-600 dark:bg-emerald-400';
+
+            return (
+              <div className="px-6 py-4 bg-slate-50/70 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                <section
+                  aria-label="Executive Assessment"
+                  className={`rounded-xl border ${cardBorder} bg-white dark:bg-slate-900 overflow-hidden shadow-2xs`}
+                >
+                  {/* 1. Verdict Banner */}
+                  <div
+                    className={`px-4 py-2.5 flex items-center justify-between gap-3 ${bannerStyle}`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        aria-hidden="true"
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor}`}
+                      />
+                      {verdict.status === 'revise' ? (
+                        <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      )}
+                      <h3 className="text-sm font-bold tracking-tight truncate">
+                        {verdict.label}
+                      </h3>
+                    </div>
+
+                    <span
+                      className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate max-w-[42%]"
+                      title={report.drawingName}
+                    >
+                      {report.drawingName}
+                    </span>
+                  </div>
+
+                  {/* 2. 1-Paragraph Assessment Block */}
+                  <div className="px-4 py-3 max-h-36 overflow-y-auto">
+                    <p className="text-[13px] text-slate-800 dark:text-slate-200 leading-relaxed">
+                      {summaryParagraph}
+                    </p>
+                  </div>
+                </section>
+              </div>
+            );
+          })()}
 
           {viewTab === 'markdown' ? (
             <div className="flex-1 flex flex-col min-h-0">

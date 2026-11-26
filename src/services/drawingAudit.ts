@@ -3,6 +3,7 @@ import {
   PRIORITY_ORDER,
   WELDING_STANDARDS,
   formatAuditReportToMarkdown,
+  normalizeExecutiveSummary,
   type AuditFinding,
   type AuditProgress,
   type AuditStandard,
@@ -102,7 +103,15 @@ async function postAuditRequest(
     throw new Error('Server returned an incomplete audit report. Please retry the analysis.');
   }
 
-  return data as DrawingAuditReport;
+  const normalizedSummary = normalizeExecutiveSummary(
+    data.executive_summary || data.generalAssessment || '',
+  );
+
+  return {
+    ...(data as DrawingAuditReport),
+    executive_summary: normalizedSummary,
+    generalAssessment: normalizedSummary,
+  };
 }
 
 function buildMultiPageAssessment(
@@ -127,8 +136,10 @@ function buildMultiPageAssessment(
       ? `Completed ${rulebookLabel} review across all ${totalPages} drawing sheets with no actionable issues identified.`
       : `Completed ${rulebookLabel} review across all ${totalPages} drawing sheets, identifying ${findings.length} actionable ${findings.length === 1 ? 'finding' : 'findings'} (${breakdown.join(', ')}).`;
 
-  const leadSummary = sheetAssessments.find((item) => item.trim().length > 0)?.trim();
-  return leadSummary ? `${overview} ${leadSummary}` : overview;
+  const leadSummary = sheetAssessments
+    .map((item) => normalizeExecutiveSummary(item))
+    .find((item) => item.length > 0);
+  return normalizeExecutiveSummary(leadSummary ? `${overview} ${leadSummary}` : overview);
 }
 
 export async function analyzeDrawingPdf(
@@ -343,8 +354,11 @@ export async function analyzeDrawingPdf(
       if (pageNum === 1 && sheetReport.drawingName.trim()) {
         resolvedDrawingName = sheetReport.drawingName.trim();
       }
-      if (sheetReport.generalAssessment.trim()) {
-        sheetAssessments.push(sheetReport.generalAssessment.trim());
+      const sheetSummary = normalizeExecutiveSummary(
+        sheetReport.executive_summary || sheetReport.generalAssessment || '',
+      );
+      if (sheetSummary) {
+        sheetAssessments.push(sheetSummary);
       }
       modelUsed = sheetReport.modelUsed || modelUsed;
       ruleCount = sheetReport.ruleCount || ruleCount;
@@ -378,21 +392,22 @@ export async function analyzeDrawingPdf(
       return a.pageNumber - b.pageNumber;
     });
 
-    const generalAssessment =
+    const executiveSummary =
       totalPages === 1 && sheetAssessments[0]
         ? sheetAssessments[0]
         : buildMultiPageAssessment(totalPages, sortedFindings, sheetAssessments, rulebookVersion);
 
     const markdown = formatAuditReportToMarkdown(
       resolvedDrawingName,
-      generalAssessment,
+      executiveSummary,
       sortedFindings,
       { isWelded, weldingStandard },
     );
 
     return {
       drawingName: resolvedDrawingName,
-      generalAssessment,
+      executive_summary: executiveSummary,
+      generalAssessment: executiveSummary,
       findings: sortedFindings,
       markdown,
       analyzedAt: new Date().toISOString(),

@@ -17,6 +17,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { AuditFinding, AuditRunState, AuditStandard } from '../types/audit';
 import { pdfjsLib } from '../utils/pdfHelpers';
 import { AuditReviewPanel } from './AuditReviewPanel';
+import type { BatchAuditItem } from './BatchQueuePanel';
 import {
   PdfFindingsOverlayCanvas,
   transformBoundingBoxToPixels,
@@ -28,6 +29,9 @@ interface PdfPreviewWorkspaceProps {
   blobUrl: string;
   selectedStandard: AuditStandard;
   auditState: AuditRunState;
+  batchItems?: BatchAuditItem[];
+  activeBatchItemId?: string | null;
+  onSelectBatchItem?: (itemId: string) => void;
   onRunAudit: () => void;
   onCancelAudit: () => void;
   onBack: () => void;
@@ -227,6 +231,9 @@ export const PdfPreviewWorkspace: React.FC<PdfPreviewWorkspaceProps> = ({
   blobUrl,
   selectedStandard,
   auditState,
+  batchItems,
+  activeBatchItemId = null,
+  onSelectBatchItem,
   onRunAudit,
   onCancelAudit,
   onBack,
@@ -843,10 +850,125 @@ export const PdfPreviewWorkspace: React.FC<PdfPreviewWorkspaceProps> = ({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <FileUp className="w-3.5 h-3.5" />
-            <span>Open PDF</span>
+            <span>{batchItems && batchItems.length > 1 ? 'Add PDFs' : 'Open PDF'}</span>
           </button>
         </div>
       </div>
+
+      {/* Compact Batch Drawing Switcher Bar (visible when multiple PDFs are queued/loaded) */}
+      {batchItems && batchItems.length > 1 && onSelectBatchItem && (() => {
+        const currentIndex = Math.max(
+          0,
+          batchItems.findIndex((item) => item.id === activeBatchItemId),
+        );
+        const total = batchItems.length;
+        const completedCount = batchItems.filter((item) => item.status === 'complete').length;
+        const errorCount = batchItems.filter((item) => item.status === 'error').length;
+        const analyzingItem = batchItems.find((item) => item.status === 'analyzing') ?? null;
+        const activeFraction =
+          analyzingItem && analyzingItem.auditState.status === 'analyzing'
+            ? Math.max(0, Math.min(100, analyzingItem.auditState.progress.percent)) / 100
+            : 0;
+        const overallPercent = Math.min(
+          100,
+          Math.round(((completedCount + errorCount + activeFraction) / total) * 100),
+        );
+
+        const formatOptionLabel = (item: BatchAuditItem, index: number) => {
+          const prefix = `${String(index + 1).padStart(2, '0')}. ${item.file.name}`;
+          if (item.status === 'complete' && item.auditState.status === 'complete') {
+            return `${prefix} — Complete (${item.auditState.report.findings.length})`;
+          }
+          if (item.status === 'analyzing' && item.auditState.status === 'analyzing') {
+            return `${prefix} — Auditing ${item.auditState.progress.percent}%`;
+          }
+          if (item.status === 'queued') return `${prefix} — Queued`;
+          if (item.status === 'error') return `${prefix} — Error`;
+          return `${prefix} — Cancelled`;
+        };
+
+        return (
+          <div
+            aria-label="Batch drawing switcher"
+            className="h-10 shrink-0 bg-slate-50 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between gap-4 text-xs transition-colors duration-200"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-mono font-semibold uppercase tracking-wide text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                Batch
+              </span>
+              <button
+                type="button"
+                onClick={() => onSelectBatchItem(batchItems[currentIndex - 1].id)}
+                disabled={currentIndex <= 0}
+                aria-label="Previous drawing in batch"
+                className="p-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <select
+                aria-label="Select drawing from batch"
+                value={batchItems[currentIndex]?.id ?? ''}
+                onChange={(e) => onSelectBatchItem(e.target.value)}
+                className="h-7 px-2 max-w-[280px] sm:max-w-[380px] text-xs font-medium text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer truncate"
+              >
+                {batchItems.map((item, idx) => (
+                  <option key={item.id} value={item.id}>
+                    {formatOptionLabel(item, idx)}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => onSelectBatchItem(batchItems[currentIndex + 1].id)}
+                disabled={currentIndex >= total - 1}
+                aria-label="Next drawing in batch"
+                className="p-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-transparent rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+
+              <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                {currentIndex + 1} / {total}
+              </span>
+            </div>
+
+            <div className="hidden md:flex items-center gap-3 min-w-0 shrink-0">
+              {analyzingItem && analyzingItem.auditState.status === 'analyzing' ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-3 h-3 border-2 border-slate-300 dark:border-slate-700 border-t-blue-700 dark:border-t-sky-400 rounded-full animate-spin shrink-0" />
+                  <span className="text-slate-700 dark:text-slate-200 truncate max-w-[220px]">
+                    Auditing {analyzingItem.file.name} ({analyzingItem.auditState.progress.percent}%)
+                  </span>
+                </div>
+              ) : (
+                <span className="text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  {completedCount} of {total} completed
+                  {errorCount > 0 ? ` · ${errorCount} failed` : ''}
+                </span>
+              )}
+
+              <div
+                role="progressbar"
+                aria-label="Background batch progress"
+                aria-valuenow={overallPercent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="w-24 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800 shrink-0"
+              >
+                <div
+                  className="h-full rounded-full bg-blue-700 dark:bg-sky-400 transition-[width] duration-300 ease-out"
+                  style={{ width: `${Math.max(analyzingItem ? 4 : 0, overallPercent)}%` }}
+                />
+              </div>
+              <span className="font-mono tabular-nums font-semibold text-blue-700 dark:text-sky-400 shrink-0">
+                {overallPercent}%
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Main Split Review + Drawing Preview Viewport */}
       <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
